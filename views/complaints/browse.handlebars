@@ -1,0 +1,75 @@
+<h1>Browse Complaints</h1>
+
+<div class="nyc311-section">
+  <form method="GET" action="/complaints/browse" class="browse-filters">
+
+    <div>
+      <label for="borough">Borough</label>
+      <select id="borough" name="borough">
+        <option value="">All</option>
+        <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
+        <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
+        <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
+        <option value="Bronx" {{#if isBronx}}selected{{/if}}>Bronx</option>
+        <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="complaintType">Complaint Type</label>
+      <select id="complaintType" name="complaintType">
+        <option value="">All</option>
+        <option value="Loud Music/Party" {{#if isLoudMusic}}selected{{/if}}>Loud Music/Party</option>
+        <option value="Construction" {{#if isConstruction}}selected{{/if}}>Construction</option>
+        <option value="Barking Dog" {{#if isBarkingDog}}selected{{/if}}>Barking Dog</option>
+        <option value="Vehicle Idling" {{#if isVehicleIdling}}selected{{/if}}>Vehicle Idling</option>
+        <option value="Loud Talking {{#if isLoudTalking}}selected{{/if}}">Loud Talking</option>
+        <option value="Other" {{#if isOther}}selected{{/if}}>Other</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="from">From</label>
+      <input id="from" type="date" name="from" value="{{from}}" />
+    </div>
+
+    <div>
+      <label for="to">To</label>
+      <input id="to" type="date" name="to" value="{{to}}" />
+    </div>
+
+    <button type="submit">Filter</button>
+  </form>
+
+  <form method="GET" action="/complaints/browse" class="search-form">
+    <input type="search" name="search" value="{{search}}" placeholder="Search address, type, description, etc.">
+    <button type="submit">Search</button>
+  </form>
+
+  <h2>Complaints</h2>
+  {{#if complaints}}
+    {{#each complaints}}
+      <div class="complaint-item">
+        <h3>{{this.complaintType}}</h3>
+        <p>Address: {{this.incidentAddress}}, {{this.borough}}</p>
+        <p>Description: {{this.resolutionDescription}}</p>
+        <P>Submitted: {{this.createdDate}}</P>
+        <p>Status: {{this.status}}</p>
+      </div>
+    {{/each}}
+
+    <div class="pagination-complaint">
+
+      {{#if hPrev}}
+        <a href="/complaints/browse?page={{prevPage}}{{queryString}}">Prev</a>
+      {{/if}}
+
+      <span>{{currPage}} of {{totPages}}</span>
+
+      {{#if hNext}}
+        <a href="/complaints/browse?page={{nextPage}}{{queryString}}">Next</a>
+      {{/if}}
+
+    </div>
+  {{/if}}
+</div>

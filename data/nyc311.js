@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
-import { nyc311cache } from '../config/mongoCollections.js';
+import fetch from "node-fetch";
+import { nyc311cache } from "../config/mongoCollections.js";
 
-const SODA_URL = 'https://data.cityofnewyork.us/resource/erm2-nwe9.json';
+const SODA_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json";
 
 // Fetches fresh noise complaints from NYC Open Data and upserts into the cache
 export const refreshCache = async () => {
@@ -9,8 +9,8 @@ export const refreshCache = async () => {
 
   const params = new URLSearchParams({
     $where: "complaint_type LIKE '%Noise%'",
-    $order: 'created_date DESC',
-    $limit: '1000'
+    $order: "created_date DESC",
+    $limit: "1000",
   });
 
   const res = await fetch(`${SODA_URL}?${params}`);
@@ -29,11 +29,11 @@ export const refreshCache = async () => {
           incidentAddress: r.incident_address,
           status: r.status,
           resolutionDescription: r.resolution_description || null,
-          cachedAt: new Date()
-        }
+          cachedAt: new Date(),
+        },
       },
-      upsert: true
-    }
+      upsert: true,
+    },
   }));
 
   const result = await col.bulkWrite(ops);
@@ -41,27 +41,38 @@ export const refreshCache = async () => {
 };
 
 // Returns cached 311 complaints with optional filters
-export const getCached311 = async ({ borough, complaintType, from, to, page = 1 } = {}) => {
+export const getCached311 = async ({
+  borough,
+  complaintType,
+  from,
+  to,
+  search,
+} = {}) => {
   const col = await nyc311cache();
   const filter = {};
 
   if (borough) filter.borough = borough.trim().toUpperCase();
-  if (complaintType) filter.complaintType = { $regex: complaintType, $options: 'i' };
+  if (complaintType)
+    filter.complaintType = { $regex: complaintType, $options: "i" };
+  if (search) {
+    const regex = { $regex: search.trim(), $options: "i" };
+    filter.$or = [
+      { incidentAddress: regex },
+      { complaintType: regex },
+      { resolutionDescription: regex },
+      { borough: regex },
+    ];
+  }
   if (from || to) {
     filter.createdDate = {};
     if (from) filter.createdDate.$gte = new Date(from);
     if (to) filter.createdDate.$lte = new Date(to);
   }
 
-  const limit = 20;
-  const skip = (page - 1) * limit;
+  // const limit = 20;
+  // const skip = (page - 1) * limit;
 
-  const results = await col
-    .find(filter)
-    .sort({ createdDate: -1 })
-    .skip(skip)
-    .limit(limit)
-    .toArray();
+  const results = await col.find(filter).sort({ createdDate: -1 }).toArray();
 
   return results;
 };
