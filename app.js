@@ -4,8 +4,12 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
 import configRoutes from './routes/index.js';
+import { refreshCache } from './data/nyc311.js';
 
 dotenv.config();
+
+// Refresh 311 cache on startup
+refreshCache().then(() => console.log('311 cache refreshed')).catch(console.error);
 
 const app = express();
 const port = process.env.PORT || 3000;
