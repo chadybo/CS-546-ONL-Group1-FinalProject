@@ -2,7 +2,7 @@
 
 <div class="nyc311-section">
   <form method="GET" action="/complaints/browse" class="browse-filters">
-
+    <input type="hidden" name="search" value="{{search}}"/>
     <div>
       <label for="borough">Borough</label>
       <select id="borough" name="borough">
@@ -43,6 +43,10 @@
 
   <form method="GET" action="/complaints/browse" class="search-form">
     <input type="search" name="search" value="{{search}}" placeholder="Search address, type, description, etc.">
+    <input type="hidden" name="borough" value="{{borough}}"/>
+    <input type="hidden" name="complaintType" value="{{complaintType}}"/>
+    <input type="hidden" name="from" value="{{from}}"/>
+    <input type="hidden" name="to" value="{{to}}"/>
     <button type="submit">Search</button>
   </form>
 
