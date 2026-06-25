@@ -1,0 +1,46 @@
+<h1>Hotspots</h1>
+
+<div class="hotspot-section">
+  <form method="GET" action="/complaints/hotspots" class="hotspot-filters">
+    <input type="hidden" name="search" value="{{search}}"/>
+    <div>
+      <label for="borough">Borough</label>
+      <select id="borough" name="borough">
+        <option value="">All</option>
+        <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
+        <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
+        <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
+        <option value="Bronx" {{#if isBronx}}selected{{/if}}>Bronx</option>
+        <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
+      </select>
+    </div>
+
+    <button type="submit">Filter</button>
+  </form>
+
+  <h2>Hotspots</h2>
+  {{#if hotspots}}
+    {{#each hotspots}}
+      <div class="hotspot-item">
+        <h3>Top Complaint: {{this.topComplaintType}}</h3>
+        <p>Address: {{this.address}}, {{this.borough}}</p>
+        <p>Report Count: {{this.count}}</p>
+        <P>Last Reported: {{this.lastReported}}</P>
+      </div>
+    {{/each}}
+
+    <div class="pagination-complaint">
+
+      {{#if hPrev}}
+        <a href="/complaints/hotspots?page={{prevPage}}{{queryString}}">Prev</a>
+      {{/if}}
+
+      <span>{{currPage}} of {{totPages}}</span>
+
+      {{#if hNext}}
+        <a href="/complaints/hotspots?page={{nextPage}}{{queryString}}">Next</a>
+      {{/if}}
+
+    </div>
+  {{/if}}
+</div>
