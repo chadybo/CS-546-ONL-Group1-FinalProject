@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { submitComplaint, getAllComplaints } from "../data/complaints.js";
+import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311 } from "../data/nyc311.js";
 
 const router = Router();
@@ -114,6 +115,50 @@ router.route("/browse").get(async (req, res) => {
     });
   } catch (e) {
     res.status(500).send(e);
+  }
+});
+
+router.route("/hotspots").get(async (req, res) => {
+  try {
+    const { borough } = req.query;
+    const filters = { borough };
+
+    const hotspotList = await getAllHotspots(filters);
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const totPages = Math.ceil(hotspotList.length / 10);
+    const startIndex = (page - 1) * 10;
+    const paginatedList = hotspotList.slice(startIndex, startIndex + 10);
+
+    let queryString = [];
+    if (borough) {
+      queryString.push(`borough=${encodeURIComponent(borough)}`);
+    }
+
+    if (queryString.length) {
+      queryString = `&${queryString.join("&")}`;
+    } else {
+      queryString = "";
+    }
+
+    return res.render("complaints/hotspots", {
+      hotspots: paginatedList,
+      currPage: page,
+      totPages,
+      hPrev: page > 1,
+      hNext: page < totPages,
+      prevPage: page - 1,
+      nextPage: page + 1,
+      borough,
+      isManhattan: borough === "Manhattan",
+      isBrooklyn: borough === "Brooklyn",
+      isQueens: borough === "Queens",
+      isBronx: borough === "Bronx",
+      isStatenIsland: borough === "Staten Island",
+      queryString,
+    });
+  } catch (e) {
+    return res.status(500).send(e);
   }
 });
 

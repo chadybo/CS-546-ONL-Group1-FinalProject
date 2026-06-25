@@ -24,7 +24,7 @@ export const upsertHotspot = async (normalizedAddress, borough) => {
     { address: normalizedAddress },
     {
       $set: {
-        borough,
+        borough: borough.toUpperCase(),
         count,
         confirmedHotspot: count >= 3,
         topComplaintType: top?._id ?? "Unknown",
@@ -33,4 +33,16 @@ export const upsertHotspot = async (normalizedAddress, borough) => {
     },
     { upsert: true },
   );
+};
+
+export const getAllHotspots = async ({ borough } = {}) => {
+  const hotspotList = await hotspots();
+  const filter = {};
+
+  if (borough) filter.borough = borough.trim().toUpperCase();
+  filter.count = { $gt: 2 };
+
+  const results = await hotspotList.find(filter).sort({ count: -1 }).toArray();
+
+  return results;
 };
