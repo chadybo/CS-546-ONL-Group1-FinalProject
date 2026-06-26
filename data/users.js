@@ -78,3 +78,51 @@ export const getUserDashboard = async (userId) => {
 
   return { submittedComplaints, bookmarks };
 };
+
+// Gets platform-wide stats for the admin dashboard
+export const getAdminStats = async () => {
+  const complaintCol = await complaintsCollection();
+  const userCol = await users();
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Total user submitted complaints
+  const totalComplaints = await complaintCol.countDocuments();
+
+  // Top addresses in last 30 days
+  const topAddresses = await complaintCol.aggregate([
+    { $match: { createdDate: { $gte: thirtyDaysAgo } } },
+    { $group: { _id: '$incidentAddress', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 5 }
+  ]).toArray();
+
+  // Most active users
+  const topUsers = await complaintCol.aggregate([
+    { $group: { _id: '$userId', total: { $sum: 1 } } },
+    { $sort: { total: -1 } },
+    { $limit: 5 },
+    { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+    { $unwind: '$user' }
+  ]).toArray();
+
+  // All complaints for the table
+  const allComplaints = await complaintCol
+    .find({})
+    .sort({ createdDate: -1 })
+    .limit(50)
+    .toArray();
+
+  return { totalComplaints, topAddresses, topUsers, allComplaints };
+};
+// Deletes a complaint and re-runs hotspot upsert
+export const deleteComplaint = async (complaintId) => {
+  if (!complaintId) throw 'Complaint ID is required';
+  const col = await complaintsCollection();
+  const complaint = await col.findOne({ _id: new ObjectId(complaintId) });
+  if (!complaint) throw 'Complaint not found';
+  await col.deleteOne({ _id: new ObjectId(complaintId) });
+  const { upsertHotspot } = await import('./hotspots.js');
+  await upsertHotspot(complaint.incidentAddress, complaint.borough);
+};
