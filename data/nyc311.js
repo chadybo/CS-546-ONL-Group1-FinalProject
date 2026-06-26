@@ -76,3 +76,30 @@ export const getCached311 = async ({
 
   return results;
 };
+
+// Returns complaint counts grouped by month for a given borough
+export const getComplaintTrends = async (borough) => {
+  const col = await nyc311cache();
+  const match = borough ? { borough: borough.trim().toUpperCase() } : {};
+
+  const trends = await col.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdDate' },
+          month: { $month: '$createdDate' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1 } }
+  ]).toArray();
+
+  // Format for display
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return trends.map(t => ({
+    label: `${monthNames[t._id.month - 1]} ${t._id.year}`,
+    count: t.count
+  }));
+};

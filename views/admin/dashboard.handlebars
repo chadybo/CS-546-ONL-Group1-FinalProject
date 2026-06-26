@@ -1,0 +1,82 @@
+<h1>Admin Dashboard</h1>
+
+<div class="admin-stats">
+  <div class="stat-card">
+    <div class="stat-label">Total complaints</div>
+    <div class="stat-val">{{totalComplaints}}</div>
+  </div>
+</div>
+
+<h2>Top addresses (last 30 days)</h2>
+{{#if topAddresses.length}}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Address</th>
+        <th>Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each topAddresses}}
+        <tr>
+          <td>{{this._id}}</td>
+          <td>{{this.count}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+{{else}}
+  <p>No complaints in the last 30 days.</p>
+{{/if}}
+
+<h2>Most active users</h2>
+{{#if topUsers.length}}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Complaints</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each topUsers}}
+        <tr>
+          <td>{{this.user.username}}</td>
+          <td>{{this.total}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+{{/if}}
+
+<h2>All complaints</h2>
+{{#if allComplaints.length}}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Address</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each allComplaints}}
+        <tr>
+          <td>{{this.createdDate}}</td>
+          <td>{{this.incidentAddress}}</td>
+          <td>{{this.complaintType}}</td>
+          <td>{{this.status}}</td>
+          <td>
+            <form method="POST" action="/admin/complaints/{{this._id}}/delete">
+              <button type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+{{else}}
+  <p>No complaints submitted yet.</p>
+{{/if}}

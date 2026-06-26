@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, loginUser } from '../data/users.js';
+import { registerUser, loginUser, getUserDashboard  } from '../data/users.js';
 
 const router = Router();
 
@@ -49,13 +49,21 @@ router.get('/logout', (req, res) => {
   return res.redirect('/');
 });
 
+
 // User dashboard — requires login
 router.get('/dashboard', async (req, res) => {
   if (!req.session.userId) return res.redirect('/users/login');
-  return res.render('users/dashboard', {
-    title: 'Dashboard',
-    username: req.session.username
-  });
+  try {
+    const { submittedComplaints, bookmarks } = await getUserDashboard(req.session.userId);
+    return res.render('users/dashboard', {
+      title: 'Dashboard',
+      username: req.session.username,
+      submittedComplaints,
+      bookmarks
+    });
+  } catch (e) {
+    return res.status(500).render('error', { message: e });
+  }
 });
 
 export default router;

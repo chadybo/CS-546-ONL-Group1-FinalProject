@@ -1,3 +1,55 @@
 <h1>Welcome, {{username}}</h1>
-<p>This is your dashboard. Your complaints and bookmarks will appear here.</p>
+
+<h2>Your Complaints</h2>
+{{#if submittedComplaints.length}}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Address</th>
+        <th>Type</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each submittedComplaints}}
+        <tr>
+          <td>{{this.createdDate}}</td>
+          <td>{{this.incidentAddress}}</td>
+          <td>{{this.complaintType}}</td>
+          <td>{{this.status}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+{{else}}
+  <p>You have not submitted any complaints yet. <a href="/complaints/submit">Submit one now</a></p>
+{{/if}}
+
+<h2>Bookmarks</h2>
+{{#if bookmarks.length}}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Address</th>
+        <th>Type</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each bookmarks}}
+        <tr>
+          <td>{{this.createdDate}}</td>
+          <td>{{this.incidentAddress}}</td>
+          <td>{{this.complaintType}}</td>
+          <td>{{this.status}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+{{else}}
+  <p>You have no bookmarked complaints yet.</p>
+{{/if}}
+
 <a href="/complaints/submit">Submit a new complaint</a>

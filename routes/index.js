@@ -1,10 +1,12 @@
 // Mounts all route files onto the Express app
 import usersRoutes from "./users.js";
 import complaintsRoutes from "./complaints.js";
+import adminRoutes from './admin.js';
 
 const constructorMethod = (app) => {
   app.use("/users", usersRoutes);
   app.use("/complaints", complaintsRoutes);
+  app.use('/admin', adminRoutes);
 
   // Home page
   app.get("/", async (req, res) => {
