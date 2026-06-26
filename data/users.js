@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcrypt';
 import { users } from '../config/mongoCollections.js';
+import { complaints as complaintsCollection } from '../config/mongoCollections.js';
 
 const SALT_ROUNDS = 12;
 
@@ -48,4 +49,32 @@ export const loginUser = async (email, password) => {
   if (!match) throw 'Invalid email or password';
 
   return { _id: user._id, username: user.username, email: user.email, role: user.role };
+};
+
+
+// Gets all complaints submitted by a user and their bookmarked complaints
+export const getUserDashboard = async (userId) => {
+  if (!userId) throw 'User ID is required';
+
+  const userCol = await users();
+  const complaintCol = await complaintsCollection();
+
+  const user = await userCol.findOne({ _id: new ObjectId(userId) });
+  if (!user) throw 'User not found';
+
+  // Get complaints this user submitted
+  const submittedComplaints = await complaintCol
+    .find({ userId: new ObjectId(userId) })
+    .sort({ createdDate: -1 })
+    .toArray();
+
+  // Get complaints this user has bookmarked
+  const bookmarks = user.bookmarks?.length
+    ? await complaintCol
+        .find({ _id: { $in: user.bookmarks } })
+        .sort({ createdDate: -1 })
+        .toArray()
+    : [];
+
+  return { submittedComplaints, bookmarks };
 };
