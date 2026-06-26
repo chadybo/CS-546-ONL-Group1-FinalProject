@@ -1,0 +1,60 @@
+<h1>Address History</h1>
+
+<form method="GET" action="/complaints/address">
+  <input type="text" name="q" value="{{query}}" placeholder="e.g. 251 W 30th St Manhattan" required />
+  <button type="submit">Search</button>
+</form>
+
+{{#if error}}
+  <p class="error">{{error}}</p>
+{{/if}}
+
+{{#if results}}
+  <div class="addr-summary">
+    <h2>{{query}}</h2>
+    {{#if isHotspot}}
+      <span class="badge-hotspot">Confirmed Hotspot</span>
+    {{/if}}
+    <div class="addr-stats">
+      <span>Total: {{totalCount}}</span>
+      <span>From 311: {{nycCount}}</span>
+      <span>User submitted: {{userCount}}</span>
+      {{#if topComplaintType}}
+        <span>Top type: {{topComplaintType}}</span>
+      {{/if}}
+    </div>
+  </div>
+
+  {{#if results.length}}
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each results}}
+          <tr>
+            <td>{{this.createdDate}}</td>
+            <td>{{this.complaintType}}</td>
+            <td>
+              {{#if (eq this.source '311')}}
+                <span class="badge-311">311</span>
+              {{else}}
+                <span class="badge-user">User</span>
+              {{/if}}
+            </td>
+            <td>{{this.status}}</td>
+            <td>{{this.resolutionDescription}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p>No complaints found for this address.</p>
+  {{/if}}
+{{/if}}

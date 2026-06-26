@@ -2,6 +2,7 @@ import { Router } from "express";
 import { submitComplaint, getAllComplaints } from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311 } from "../data/nyc311.js";
+import { getAddressHistory } from '../data/addressHistory.js';
 
 const router = Router();
 
@@ -159,6 +160,29 @@ router.route("/hotspots").get(async (req, res) => {
     });
   } catch (e) {
     return res.status(500).send(e);
+  }
+});
+
+router.get('/address', async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.render('complaints/address', {
+      title: 'Address History',
+      results: null
+    });
+  }
+  try {
+    const data = await getAddressHistory(q);
+    return res.render('complaints/address', {
+      title: 'Address History',
+      ...data
+    });
+  } catch (e) {
+    return res.render('complaints/address', {
+      title: 'Address History',
+      error: e,
+      results: null
+    });
   }
 });
 

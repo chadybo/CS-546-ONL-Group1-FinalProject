@@ -15,7 +15,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Set up handlebars
-const hbs = create({ defaultLayout: 'main' });
+const hbs = create({
+  defaultLayout: 'main',
+  helpers: {
+    eq: (a, b) => a === b
+  }
+});
 app.engine('handlebars', hbs.engine);
 app.set('view engine', 'handlebars');
 app.set('views', './views');
