@@ -1,12 +1,14 @@
-<h1>Hotspots</h1>
+<div class="page-header">
+  <h1>Noise Hotspots</h1>
+  <p>Addresses with the highest concentration of noise complaints.</p>
+</div>
 
-<div class="hotspot-section">
-  <form method="GET" action="/complaints/hotspots" class="hotspot-filters">
-    <input type="hidden" name="search" value="{{search}}"/>
+<div class="filter-bar">
+  <form method="GET" action="/complaints/hotspots" style="display:flex;gap:10px;align-items:flex-end;width:100%">
     <div>
-      <label for="borough">Borough</label>
-      <select id="borough" name="borough">
-        <option value="">All</option>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Borough</label>
+      <select name="borough">
+        <option value="">All boroughs</option>
         <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
         <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
         <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
@@ -14,33 +16,50 @@
         <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
       </select>
     </div>
-
-    <button type="submit">Filter</button>
+    <button type="submit" class="btn btn-primary">Filter</button>
   </form>
+</div>
 
-  <h2>Hotspots</h2>
-  {{#if hotspots}}
+{{#if hotspots}}
+  <div class="hotspot-list">
     {{#each hotspots}}
-      <div class="hotspot-item">
-        <h3>Top Complaint: {{this.topComplaintType}}</h3>
-        <p>Address: {{this.address}}, {{this.borough}}</p>
-        <p>Report Count: {{this.count}}</p>
-        <P>Last Reported: {{this.lastReported}}</P>
+      <div class="hotspot-card confirmed">
+        <div class="hotspot-info">
+          <h3>{{this.address}}</h3>
+          <div class="hotspot-meta">
+            {{this.borough}}
+            {{#if this.topComplaintType}}
+              &nbsp;·&nbsp; {{this.topComplaintType}}
+            {{/if}}
+            {{#if this.lastReported}}
+              &nbsp;·&nbsp; Last reported {{this.lastReported}}
+            {{/if}}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <div class="hotspot-count">{{this.count}}</div>
+          <span style="font-size:11px;color:#adb5bd">complaints</span>
+          <span class="badge badge-hotspot">Confirmed hotspot</span>
+          <a href="/complaints/address?q={{this.address}}" class="btn btn-outline btn-sm">View history</a>
+        </div>
       </div>
     {{/each}}
+  </div>
 
-    <div class="pagination-complaint">
-
+  <div class="pagination">
+    <span style="color:#adb5bd;font-size:13px">Page {{currPage}} of {{totPages}}</span>
+    <div class="pagination-btns">
       {{#if hPrev}}
-        <a href="/complaints/hotspots?page={{prevPage}}{{queryString}}">Prev</a>
+        <a href="/complaints/hotspots?page={{prevPage}}{{queryString}}" class="btn btn-outline btn-sm">Prev</a>
       {{/if}}
-
-      <span>{{currPage}} of {{totPages}}</span>
-
       {{#if hNext}}
-        <a href="/complaints/hotspots?page={{nextPage}}{{queryString}}">Next</a>
+        <a href="/complaints/hotspots?page={{nextPage}}{{queryString}}" class="btn btn-outline btn-sm">Next</a>
       {{/if}}
-
     </div>
-  {{/if}}
-</div>
+  </div>
+{{else}}
+  <div class="empty-state">
+    <p>No confirmed hotspots yet. Hotspots appear when 3 or more users report the same address.</p>
+    <a href="/complaints/submit" class="btn btn-outline">Submit a complaint</a>
+  </div>
+{{/if}}

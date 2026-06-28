@@ -1,27 +1,41 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{title}} | Street Noise NYC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/public/css/style.css" />
   </head>
   <body>
-    <nav>
-      <a href="/">Street Noise NYC</a>
-      <div>
-        <a href="/complaints/browse">Browse</a>
-        <a href="/complaints/hotspots">Hotspots</a>
-        {{#if user}}
-          <a href="/users/dashboard">Dashboard</a>
-          <a href="/users/logout">Logout</a>
-        {{else}}
-          <a href="/users/login">Login</a>
-          <a href="/users/register">Register</a>
-        {{/if}}
+    <nav class="navbar">
+      <div class="nav-inner">
+        <a href="/" class="nav-brand">Street Noise NYC</a>
+        <div class="nav-links">
+          <a href="/complaints/browse" class="nav-link">Browse</a>
+          <a href="/complaints/hotspots" class="nav-link">Hotspots</a>
+          <a href="/complaints/address" class="nav-link">Address Search</a>
+          <a href="/complaints/trends" class="nav-link">Trends</a>
+          {{#if user}}
+            <a href="/users/dashboard" class="nav-link">Dashboard</a>
+            <a href="/users/logout" class="nav-link">Logout</a>
+          {{else}}
+            <a href="/users/login" class="nav-link">Login</a>
+            <a href="/users/register" class="nav-btn">Register</a>
+          {{/if}}
+        </div>
       </div>
     </nav>
-    <main>
+    <main class="main-content">
       {{{body}}}
     </main>
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>Street Noise NYC</span>
+        <span>Data from NYC Open Data 311</span>
+      </div>
+    </footer>
   </body>
 </html>

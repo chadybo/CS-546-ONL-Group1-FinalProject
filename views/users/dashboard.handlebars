@@ -1,55 +1,90 @@
-<h1>Welcome, {{username}}</h1>
+<div class="page-header">
+  <h1>Welcome, {{username}}</h1>
+  <p>Track your submitted complaints and bookmarks.</p>
+</div>
 
-<h2>Your Complaints</h2>
+<div style="display:flex;gap:12px;margin-bottom:32px">
+  <a href="/complaints/submit" class="btn btn-primary">Submit a complaint</a>
+</div>
+
+<div class="page-header">
+  <h1 style="font-size:20px">Your Complaints</h1>
+</div>
+
 {{#if submittedComplaints.length}}
-  <table class="history-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Address</th>
-        <th>Type</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each submittedComplaints}}
+  <div class="table-wrap" style="margin-bottom:40px">
+    <table>
+      <thead>
         <tr>
-          <td>{{this.createdDate}}</td>
-          <td>{{this.incidentAddress}}</td>
-          <td>{{this.complaintType}}</td>
-          <td>{{this.status}}</td>
+          <th>Type</th>
+          <th>Address</th>
+          <th>Borough</th>
+          <th>Date</th>
+          <th>Status</th>
         </tr>
-      {{/each}}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {{#each submittedComplaints}}
+          <tr>
+            <td style="font-weight:500">{{this.complaintType}}</td>
+            <td style="color:#495057">{{this.incidentAddress}}</td>
+            <td>{{this.borough}}</td>
+            <td style="color:#adb5bd;font-size:13px">{{this.createdDate}}</td>
+            <td>
+              {{#if (eq this.status 'open')}}
+                <span class="badge badge-open">Open</span>
+              {{else}}
+                <span class="badge badge-resolved">Resolved</span>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
 {{else}}
-  <p>You have not submitted any complaints yet. <a href="/complaints/submit">Submit one now</a></p>
+  <div class="empty-state" style="margin-bottom:40px">
+    <p>You have not submitted any complaints yet.</p>
+    <a href="/complaints/submit" class="btn btn-outline">Submit your first complaint</a>
+  </div>
 {{/if}}
 
-<h2>Bookmarks</h2>
+<div class="page-header">
+  <h1 style="font-size:20px">Bookmarks</h1>
+</div>
+
 {{#if bookmarks.length}}
-  <table class="history-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Address</th>
-        <th>Type</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each bookmarks}}
+  <div class="table-wrap">
+    <table>
+      <thead>
         <tr>
-          <td>{{this.createdDate}}</td>
-          <td>{{this.incidentAddress}}</td>
-          <td>{{this.complaintType}}</td>
-          <td>{{this.status}}</td>
+          <th>Type</th>
+          <th>Address</th>
+          <th>Borough</th>
+          <th>Status</th>
         </tr>
-      {{/each}}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {{#each bookmarks}}
+          <tr>
+            <td style="font-weight:500">{{this.complaintType}}</td>
+            <td style="color:#495057">{{this.incidentAddress}}</td>
+            <td>{{this.borough}}</td>
+            <td>
+              {{#if (eq this.status 'open')}}
+                <span class="badge badge-open">Open</span>
+              {{else}}
+                <span class="badge badge-resolved">Resolved</span>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
 {{else}}
-  <p>You have no bookmarked complaints yet.</p>
+  <div class="empty-state">
+    <p>You have no bookmarked complaints yet.</p>
+    <a href="/complaints/browse" class="btn btn-outline">Browse complaints</a>
+  </div>
 {{/if}}
-
-<a href="/complaints/submit">Submit a new complaint</a>
