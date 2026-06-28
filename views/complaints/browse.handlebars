@@ -1,12 +1,14 @@
-<h1>Browse Complaints</h1>
+<div class="page-header">
+  <h1>Browse Complaints</h1>
+  <p>Explore noise complaints from NYC 311 and community submissions.</p>
+</div>
 
-<div class="nyc311-section">
-  <form method="GET" action="/complaints/browse" class="browse-filters">
-    <input type="hidden" name="search" value="{{search}}"/>
+<div class="filter-bar">
+  <form method="GET" action="/complaints/browse" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;width:100%">
     <div>
-      <label for="borough">Borough</label>
-      <select id="borough" name="borough">
-        <option value="">All</option>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Borough</label>
+      <select name="borough">
+        <option value="">All boroughs</option>
         <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
         <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
         <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
@@ -14,66 +16,91 @@
         <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
       </select>
     </div>
-
     <div>
-      <label for="complaintType">Complaint Type</label>
-      <select id="complaintType" name="complaintType">
-        <option value="">All</option>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Type</label>
+      <select name="complaintType">
+        <option value="">All types</option>
         <option value="Loud Music/Party" {{#if isLoudMusic}}selected{{/if}}>Loud Music/Party</option>
         <option value="Construction" {{#if isConstruction}}selected{{/if}}>Construction</option>
         <option value="Barking Dog" {{#if isBarkingDog}}selected{{/if}}>Barking Dog</option>
         <option value="Vehicle Idling" {{#if isVehicleIdling}}selected{{/if}}>Vehicle Idling</option>
-        <option value="Loud Talking {{#if isLoudTalking}}selected{{/if}}">Loud Talking</option>
+        <option value="Loud Talking" {{#if isLoudTalking}}selected{{/if}}>Loud Talking</option>
         <option value="Other" {{#if isOther}}selected{{/if}}>Other</option>
       </select>
     </div>
-
     <div>
-      <label for="from">From</label>
-      <input id="from" type="date" name="from" value="{{from}}" />
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
+      <input type="date" name="from" value="{{from}}" />
     </div>
-
     <div>
-      <label for="to">To</label>
-      <input id="to" type="date" name="to" value="{{to}}" />
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">To</label>
+      <input type="date" name="to" value="{{to}}" />
     </div>
-
-    <button type="submit">Filter</button>
-  </form>
-
-  <form method="GET" action="/complaints/browse" class="search-form">
-    <input type="search" name="search" value="{{search}}" placeholder="Search address, type, description, etc.">
-    <input type="hidden" name="borough" value="{{borough}}"/>
-    <input type="hidden" name="complaintType" value="{{complaintType}}"/>
-    <input type="hidden" name="from" value="{{from}}"/>
-    <input type="hidden" name="to" value="{{to}}"/>
-    <button type="submit">Search</button>
-  </form>
-
-  <h2>Complaints</h2>
-  {{#if complaints}}
-    {{#each complaints}}
-      <div class="complaint-item">
-        <h3>{{this.complaintType}}</h3>
-        <p>Address: {{this.incidentAddress}}, {{this.borough}}</p>
-        <p>Description: {{this.resolutionDescription}}</p>
-        <P>Submitted: {{this.createdDate}}</P>
-        <p>Status: {{this.status}}</p>
-      </div>
-    {{/each}}
-
-    <div class="pagination-complaint">
-
-      {{#if hPrev}}
-        <a href="/complaints/browse?page={{prevPage}}{{queryString}}">Prev</a>
-      {{/if}}
-
-      <span>{{currPage}} of {{totPages}}</span>
-
-      {{#if hNext}}
-        <a href="/complaints/browse?page={{nextPage}}{{queryString}}">Next</a>
-      {{/if}}
-
+    <div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Search</label>
+      <input type="text" name="search" value="{{search}}" placeholder="Address, type, keyword..." style="min-width:200px" />
     </div>
-  {{/if}}
+    <input type="hidden" name="page" value="1" />
+    <button type="submit" class="btn btn-primary">Filter</button>
+  </form>
 </div>
+
+{{#if complaints}}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Address</th>
+          <th>Borough</th>
+          <th>Date</th>
+          <th>Source</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each complaints}}
+          <tr>
+            <td style="font-weight:500">{{this.complaintType}}</td>
+            <td style="color:#495057">{{this.incidentAddress}}</td>
+            <td>{{this.borough}}</td>
+            <td style="color:#adb5bd;font-size:13px">{{this.createdDate}}</td>
+            <td>
+              {{#if (eq this.source 'user')}}
+                <span class="badge badge-user">User</span>
+              {{else}}
+                <span class="badge badge-311">311</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if (eq this.status 'open')}}
+                <span class="badge badge-open">Open</span>
+              {{else if (eq this.status 'resolved')}}
+                <span class="badge badge-resolved">Resolved</span>
+              {{else}}
+                <span class="badge badge-open">{{this.status}}</span>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span style="color:#adb5bd;font-size:13px">Page {{currPage}} of {{totPages}}</span>
+    <div class="pagination-btns">
+      {{#if hPrev}}
+        <a href="/complaints/browse?page={{prevPage}}{{queryString}}" class="btn btn-outline btn-sm">Prev</a>
+      {{/if}}
+      {{#if hNext}}
+        <a href="/complaints/browse?page={{nextPage}}{{queryString}}" class="btn btn-outline btn-sm">Next</a>
+      {{/if}}
+    </div>
+  </div>
+{{else}}
+  <div class="empty-state">
+    <p>No complaints found matching your filters.</p>
+    <a href="/complaints/browse" class="btn btn-outline">Clear filters</a>
+  </div>
+{{/if}}
