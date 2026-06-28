@@ -1,3 +1,52 @@
-<h1>Street Noise NYC</h1>
-<p>Browse and report noise complaints across New York City.</p>
-<a href="/complaints/browse">Browse complaints</a>
+<div class="hero">
+  <h1>NYC Noise Complaints, Mapped by the Community</h1>
+  <p>Browse real 311 data, submit your own reports, and discover which addresses in your neighborhood are repeat offenders.</p>
+  <div class="hero-btns">
+    <a href="/complaints/browse" class="btn-hero">Browse Complaints</a>
+    <a href="/complaints/hotspots" class="btn-hero-outline">View Hotspots</a>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-label">Total complaints</div>
+    <div class="stat-val">{{totalCount}}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Confirmed hotspots</div>
+    <div class="stat-val">{{hotspotCount}}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Data source</div>
+    <div class="stat-val" style="font-size:16px;padding-top:6px">NYC 311</div>
+  </div>
+</div>
+
+<div class="page-header">
+  <h1>Recent Activity</h1>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Address</th>
+        <th>Borough</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each recentComplaints}}
+        <tr>
+          <td>{{this.complaintType}}</td>
+          <td>{{this.incidentAddress}}</td>
+          <td>{{this.borough}}</td>
+          <td><span class="badge badge-open">{{this.status}}</span></td>
+        </tr>
+      {{else}}
+        <tr><td colspan="4" style="text-align:center;color:#adb5bd;padding:32px">No recent complaints</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
