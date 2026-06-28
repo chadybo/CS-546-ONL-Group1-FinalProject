@@ -1,29 +1,44 @@
-<h1>Submit a Noise Complaint</h1>
-{{#if error}}
-  <p class="error">{{error}}</p>
-{{/if}}
-<form method="POST" action="/complaints/submit">
-  <label>Address</label>
-  <input type="text" name="address" placeholder="e.g. 251 W 30th St, Manhattan" required />
+<div style="max-width:600px;margin:0 auto">
+  <div class="page-header">
+    <h1>Submit a Complaint</h1>
+    <p>Report a noise issue in your neighborhood.</p>
+  </div>
 
-  <label>Borough</label>
-  <select name="borough" required>
-    <option value="">Select a borough</option>
-    {{#each boroughs}}
-      <option value="{{this}}">{{this}}</option>
-    {{/each}}
-  </select>
+  {{#if error}}
+    <div class="alert alert-error">{{error}}</div>
+  {{/if}}
 
-  <label>Complaint Type</label>
-  <select name="complaintType" required>
-    <option value="">Select a type</option>
-    {{#each types}}
-      <option value="{{this}}">{{this}}</option>
-    {{/each}}
-  </select>
-
-  <label>Description (optional)</label>
-  <textarea name="description" maxlength="500" placeholder="Describe the issue..."></textarea>
-
-  <button type="submit">Submit Complaint</button>
-</form>
+  <div class="card">
+    <form method="POST" action="/complaints/submit">
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" name="address" placeholder="e.g. 251 W 30th St, Manhattan" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Borough</label>
+          <select name="borough" required>
+            <option value="">Select a borough</option>
+            {{#each boroughs}}
+              <option value="{{this}}">{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Complaint Type</label>
+          <select name="complaintType" required>
+            <option value="">Select a type</option>
+            {{#each types}}
+              <option value="{{this}}">{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description <span style="color:#adb5bd;font-weight:400">(optional)</span></label>
+        <textarea name="description" maxlength="500" placeholder="Describe the issue in more detail..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">Submit Complaint</button>
+    </form>
+  </div>
+</div>
