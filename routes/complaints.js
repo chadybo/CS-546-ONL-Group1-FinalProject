@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { submitComplaint, getAllComplaints } from "../data/complaints.js";
+import {
+  submitComplaint,
+  getAllComplaints,
+  aggregateComplaintType,
+} from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
 import { getAddressHistory } from "../data/addressHistory.js";
@@ -211,6 +215,28 @@ router.get("/trends", async (req, res) => {
       isQueens: borough === "Queens",
       isBronx: borough === "Bronx",
       isStatenIsland: borough === "Staten Island",
+    });
+  } catch (e) {
+    return res.status(500).render("error", { message: e });
+  }
+});
+
+router.get("/common", async (req, res) => {
+  try {
+    const data_aggr = await aggregateComplaintType();
+    const page = parseInt(req.query.page, 10) || 1;
+    const totPages = Math.ceil(data_aggr.length / 10);
+    const startIndex = (page - 1) * 10;
+    const paginatedList = data_aggr.slice(startIndex, startIndex + 10);
+
+    res.render("complaints/common", {
+      data: paginatedList,
+      currPage: page,
+      totPages,
+      hPrev: page > 1,
+      hNext: page < totPages,
+      prevPage: page - 1,
+      nextPage: page + 1,
     });
   } catch (e) {
     return res.status(500).render("error", { message: e });

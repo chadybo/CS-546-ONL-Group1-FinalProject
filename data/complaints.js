@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { complaints, users } from "../config/mongoCollections.js";
+import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
 
 const VALID_TYPES = [
@@ -96,4 +96,37 @@ export const getAllComplaints = async ({
     .toArray();
 
   return results;
+};
+
+export const aggregateComplaintType = async () => {
+  const nyc311Data = await nyc311cache();
+  const complaintList = await complaints();
+
+  const nyc311result = await nyc311Data
+    .aggregate([
+      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ])
+    .toArray();
+
+  const complaintresult = await complaintList
+    .aggregate([
+      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ])
+    .toArray();
+
+  let combined_data = nyc311result.concat(complaintresult);
+
+  combined_data.sort((x, y) => {
+    return y.count - x.count;
+  });
+
+  let count = 1;
+  combined_data.forEach((x) => {
+    x.rank = count;
+    count++;
+  });
+
+  return combined_data;
 };
