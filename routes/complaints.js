@@ -3,6 +3,8 @@ import {
   submitComplaint,
   getAllComplaints,
   aggregateComplaintType,
+  sortDate,
+  shuffleComplaints,
 } from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
@@ -57,7 +59,7 @@ router.post("/submit", async (req, res) => {
 
 router.route("/browse").get(async (req, res) => {
   try {
-    const { borough, complaintType, from, to, search } = req.query;
+    const { borough, complaintType, from, to, search, sort } = req.query;
 
     const filters = { borough, complaintType, from, to, search };
 
@@ -65,6 +67,16 @@ router.route("/browse").get(async (req, res) => {
     const nyc311List = await getCached311(filters);
 
     let combinedList = complaintList.concat(nyc311List);
+
+    await shuffleComplaints(combinedList);
+
+    if (sort) {
+      if (sort === "Newest") {
+        await sortDate(combinedList, 1);
+      } else if (sort === "Oldest") {
+        await sortDate(combinedList, 0);
+      }
+    }
 
     const page = parseInt(req.query.page, 10) || 1;
     const totPages = Math.ceil(combinedList.length / 10);
@@ -86,6 +98,9 @@ router.route("/browse").get(async (req, res) => {
     }
     if (search) {
       queryString.push(`search=${encodeURIComponent(search)}`);
+    }
+    if (sort) {
+      queryString.push(`sort=${encodeURIComponent(sort)}`);
     }
 
     if (queryString.length) {
@@ -114,6 +129,8 @@ router.route("/browse").get(async (req, res) => {
       isVehicleIdling: complaintType === "Vehicle Idling",
       isLoudTalking: complaintType === "Loud Talking",
       isOther: complaintType === "Other",
+      isNewest: sort === "Newest",
+      isOldest: sort === "Oldest",
       from,
       to,
       search,

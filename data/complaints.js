@@ -130,3 +130,26 @@ export const aggregateComplaintType = async () => {
 
   return combined_data;
 };
+
+export const sortDate = async (arr, bool) => {
+  if (bool === 0) {
+    arr.sort((x, y) => {
+      return new Date(x.createdDate) - new Date(y.createdDate);
+    });
+  } else if (bool === 1) {
+    arr.sort((x, y) => {
+      return new Date(y.createdDate) - new Date(x.createdDate);
+    });
+  }
+
+  return arr;
+};
+
+export const shuffleComplaints = async (array) => {
+  for (let x = 0; x < array.length; x++) {
+    let y = Math.floor(Math.random() * (x + 1));
+    [array[x], array[y]] = [array[y], array[x]];
+  }
+
+  return array;
+};
