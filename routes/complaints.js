@@ -2,8 +2,8 @@ import { Router } from "express";
 import { submitComplaint, getAllComplaints } from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
-import { getAddressHistory } from '../data/addressHistory.js';
-
+import { getAddressHistory } from "../data/addressHistory.js";
+import { geocodePin } from "../helper.js";
 
 const router = Router();
 
@@ -143,9 +143,18 @@ router.route("/hotspots").get(async (req, res) => {
       queryString = "";
     }
 
+    let coords = [];
+
+    for (let x of paginatedList) {
+      let points = await geocodePin(`${x.address}, ${x.borough} NY`);
+      coords.push(points);
+    }
+
     return res.render("complaints/hotspots", {
       hotspots: paginatedList,
       currPage: page,
+      maptilerKey: process.env.MAPTILER_API_KEY,
+      coords: JSON.stringify(coords),
       totPages,
       hPrev: page > 1,
       hNext: page < totPages,
@@ -164,47 +173,47 @@ router.route("/hotspots").get(async (req, res) => {
   }
 });
 
-router.get('/address', async (req, res) => {
+router.get("/address", async (req, res) => {
   const { q } = req.query;
   if (!q) {
-    return res.render('complaints/address', {
-      title: 'Address History',
-      results: null
+    return res.render("complaints/address", {
+      title: "Address History",
+      results: null,
     });
   }
   try {
     const data = await getAddressHistory(q);
-    return res.render('complaints/address', {
-      title: 'Address History',
-      ...data
+    return res.render("complaints/address", {
+      title: "Address History",
+      ...data,
     });
   } catch (e) {
-    return res.render('complaints/address', {
-      title: 'Address History',
+    return res.render("complaints/address", {
+      title: "Address History",
       error: e,
-      results: null
+      results: null,
     });
   }
 });
 
 // Complaint trends over time
-router.get('/trends', async (req, res) => {
+router.get("/trends", async (req, res) => {
   const { borough } = req.query;
   try {
     const trends = await getComplaintTrends(borough);
-    return res.render('complaints/trends', {
-      title: 'Complaint Trends',
+    return res.render("complaints/trends", {
+      title: "Complaint Trends",
       trends,
       borough,
-      boroughs: ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'],
-      isManhattan: borough === 'Manhattan',
-      isBrooklyn: borough === 'Brooklyn',
-      isQueens: borough === 'Queens',
-      isBronx: borough === 'Bronx',
-      isStatenIsland: borough === 'Staten Island'
+      boroughs: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
+      isManhattan: borough === "Manhattan",
+      isBrooklyn: borough === "Brooklyn",
+      isQueens: borough === "Queens",
+      isBronx: borough === "Bronx",
+      isStatenIsland: borough === "Staten Island",
     });
   } catch (e) {
-    return res.status(500).render('error', { message: e });
+    return res.status(500).render("error", { message: e });
   }
 });
 
