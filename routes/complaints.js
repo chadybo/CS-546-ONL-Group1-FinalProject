@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { submitComplaint, getAllComplaints } from "../data/complaints.js";
+import {
+  submitComplaint,
+  getAllComplaints,
+  aggregateComplaintType,
+  sortDate,
+  shuffleComplaints,
+} from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
-import { getAddressHistory } from '../data/addressHistory.js';
-
+import { getAddressHistory } from "../data/addressHistory.js";
+import { geocodePin } from "../helper.js";
 
 const router = Router();
 
@@ -53,7 +59,7 @@ router.post("/submit", async (req, res) => {
 
 router.route("/browse").get(async (req, res) => {
   try {
-    const { borough, complaintType, from, to, search } = req.query;
+    const { borough, complaintType, from, to, search, sort } = req.query;
 
     const filters = { borough, complaintType, from, to, search };
 
@@ -61,6 +67,16 @@ router.route("/browse").get(async (req, res) => {
     const nyc311List = await getCached311(filters);
 
     let combinedList = complaintList.concat(nyc311List);
+
+    await shuffleComplaints(combinedList);
+
+    if (sort) {
+      if (sort === "Newest") {
+        await sortDate(combinedList, 1);
+      } else if (sort === "Oldest") {
+        await sortDate(combinedList, 0);
+      }
+    }
 
     const page = parseInt(req.query.page, 10) || 1;
     const totPages = Math.ceil(combinedList.length / 10);
@@ -82,6 +98,9 @@ router.route("/browse").get(async (req, res) => {
     }
     if (search) {
       queryString.push(`search=${encodeURIComponent(search)}`);
+    }
+    if (sort) {
+      queryString.push(`sort=${encodeURIComponent(sort)}`);
     }
 
     if (queryString.length) {
@@ -110,6 +129,8 @@ router.route("/browse").get(async (req, res) => {
       isVehicleIdling: complaintType === "Vehicle Idling",
       isLoudTalking: complaintType === "Loud Talking",
       isOther: complaintType === "Other",
+      isNewest: sort === "Newest",
+      isOldest: sort === "Oldest",
       from,
       to,
       search,
@@ -143,9 +164,18 @@ router.route("/hotspots").get(async (req, res) => {
       queryString = "";
     }
 
+    let coords = [];
+
+    for (let x of paginatedList) {
+      let points = await geocodePin(`${x.address}, ${x.borough} NY`);
+      coords.push(points);
+    }
+
     return res.render("complaints/hotspots", {
       hotspots: paginatedList,
       currPage: page,
+      maptilerKey: process.env.MAPTILER_API_KEY,
+      coords: JSON.stringify(coords),
       totPages,
       hPrev: page > 1,
       hNext: page < totPages,
@@ -164,47 +194,69 @@ router.route("/hotspots").get(async (req, res) => {
   }
 });
 
-router.get('/address', async (req, res) => {
+router.get("/address", async (req, res) => {
   const { q } = req.query;
   if (!q) {
-    return res.render('complaints/address', {
-      title: 'Address History',
-      results: null
+    return res.render("complaints/address", {
+      title: "Address History",
+      results: null,
     });
   }
   try {
     const data = await getAddressHistory(q);
-    return res.render('complaints/address', {
-      title: 'Address History',
-      ...data
+    return res.render("complaints/address", {
+      title: "Address History",
+      ...data,
     });
   } catch (e) {
-    return res.render('complaints/address', {
-      title: 'Address History',
+    return res.render("complaints/address", {
+      title: "Address History",
       error: e,
-      results: null
+      results: null,
     });
   }
 });
 
 // Complaint trends over time
-router.get('/trends', async (req, res) => {
+router.get("/trends", async (req, res) => {
   const { borough } = req.query;
   try {
     const trends = await getComplaintTrends(borough);
-    return res.render('complaints/trends', {
-      title: 'Complaint Trends',
+    return res.render("complaints/trends", {
+      title: "Complaint Trends",
       trends,
       borough,
-      boroughs: ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'],
-      isManhattan: borough === 'Manhattan',
-      isBrooklyn: borough === 'Brooklyn',
-      isQueens: borough === 'Queens',
-      isBronx: borough === 'Bronx',
-      isStatenIsland: borough === 'Staten Island'
+      boroughs: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
+      isManhattan: borough === "Manhattan",
+      isBrooklyn: borough === "Brooklyn",
+      isQueens: borough === "Queens",
+      isBronx: borough === "Bronx",
+      isStatenIsland: borough === "Staten Island",
     });
   } catch (e) {
-    return res.status(500).render('error', { message: e });
+    return res.status(500).render("error", { message: e });
+  }
+});
+
+router.get("/common", async (req, res) => {
+  try {
+    const data_aggr = await aggregateComplaintType();
+    const page = parseInt(req.query.page, 10) || 1;
+    const totPages = Math.ceil(data_aggr.length / 10);
+    const startIndex = (page - 1) * 10;
+    const paginatedList = data_aggr.slice(startIndex, startIndex + 10);
+
+    res.render("complaints/common", {
+      data: paginatedList,
+      currPage: page,
+      totPages,
+      hPrev: page > 1,
+      hNext: page < totPages,
+      prevPage: page - 1,
+      nextPage: page + 1,
+    });
+  } catch (e) {
+    return res.status(500).render("error", { message: e });
   }
 });
 

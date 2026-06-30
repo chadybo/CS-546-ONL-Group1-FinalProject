@@ -29,6 +29,14 @@
       </select>
     </div>
     <div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Sort</label>
+      <select name="sort">
+        <option value="">Default</option>
+        <option value="Newest" {{#if isNewest}}selected{{/if}}>Newest</option>
+        <option value="Oldest" {{#if isOldest}}selected{{/if}}>Oldest</option>
+      </select>
+    </div>
+    <div>
       <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
       <input type="date" name="from" value="{{from}}" />
     </div>

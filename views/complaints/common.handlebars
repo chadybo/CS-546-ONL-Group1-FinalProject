@@ -1,0 +1,55 @@
+<div class="page-header">
+  <h1>Common Complaint Types</h1>
+  <p>Explore the common complaint types found in NYC.</p>
+</div>
+
+{{#if data}}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Type</th>
+          <th>Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each data}}
+          <tr>
+            <td style="font-weight:500"><span
+                class="badge badge-rank"
+              >#{{this.rank}}</span></td>
+            <td style="font-weight:500">{{this._id}}</td>
+            <td style="color:#495057">{{this.count}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span style="color:#adb5bd;font-size:13px">Page
+      {{currPage}}
+      of
+      {{totPages}}</span>
+    <div class="pagination-btns">
+      {{#if hPrev}}
+        <a
+          href="/complaints/common?page={{prevPage}}"
+          class="btn btn-outline btn-sm"
+        >Prev</a>
+      {{/if}}
+      {{#if hNext}}
+        <a
+          href="/complaints/common?page={{nextPage}}"
+          class="btn btn-outline btn-sm"
+        >Next</a>
+      {{/if}}
+    </div>
+  </div>
+{{else}}
+  <div class="empty-state">
+    <p>No rankings available</p>
+  </div>
+
+{{/if}}

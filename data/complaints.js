@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { complaints, users } from "../config/mongoCollections.js";
+import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
 
 const VALID_TYPES = [
@@ -96,4 +96,60 @@ export const getAllComplaints = async ({
     .toArray();
 
   return results;
+};
+
+export const aggregateComplaintType = async () => {
+  const nyc311Data = await nyc311cache();
+  const complaintList = await complaints();
+
+  const nyc311result = await nyc311Data
+    .aggregate([
+      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ])
+    .toArray();
+
+  const complaintresult = await complaintList
+    .aggregate([
+      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ])
+    .toArray();
+
+  let combined_data = nyc311result.concat(complaintresult);
+
+  combined_data.sort((x, y) => {
+    return y.count - x.count;
+  });
+
+  let count = 1;
+  combined_data.forEach((x) => {
+    x.rank = count;
+    count++;
+  });
+
+  return combined_data;
+};
+
+export const sortDate = async (arr, bool) => {
+  if (bool === 0) {
+    arr.sort((x, y) => {
+      return new Date(x.createdDate) - new Date(y.createdDate);
+    });
+  } else if (bool === 1) {
+    arr.sort((x, y) => {
+      return new Date(y.createdDate) - new Date(x.createdDate);
+    });
+  }
+
+  return arr;
+};
+
+export const shuffleComplaints = async (array) => {
+  for (let x = 0; x < array.length; x++) {
+    let y = Math.floor(Math.random() * (x + 1));
+    [array[x], array[y]] = [array[y], array[x]];
+  }
+
+  return array;
 };
