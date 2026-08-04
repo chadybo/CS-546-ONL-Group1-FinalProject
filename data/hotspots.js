@@ -14,7 +14,12 @@ export const upsertHotspot = async (normalizedAddress, borough) => {
   const [top] = await complaintCol
     .aggregate([
       { $match: { incidentAddress: normalizedAddress } },
-      { $group: { _id: "$complaintType", n: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { $ifNull: ["$complaintCategory", "$complaintType"] },
+          n: { $sum: 1 },
+        },
+      },
       { $sort: { n: -1 } },
       { $limit: 1 },
     ])
