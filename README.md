@@ -15,6 +15,8 @@ Built for CS 546 Web Programming I at Stevens Institute of Technology.
 - User dashboard
 - Submit a noise complaint form with address normalization and hotspot upsert logic
 - Automatic hotspot detection: any address with 3 or more user complaints is flagged as a confirmed hotspot
+- Public address history search combining matching NYC 311 and user-submitted complaints
+- Complaint type breakdown for each searched address
 
 ---
 
@@ -103,6 +105,7 @@ street-noise/
   data/
     users.js              - register and login logic
     complaints.js         - submit complaint logic
+    addressHistory.js     - combined 311 and user complaint history by address
     hotspots.js           - hotspot upsert logic
     nyc311.js             - 311 API fetch and cache
   routes/
@@ -121,6 +124,7 @@ street-noise/
       dashboard.handlebars
     complaints/
       submit.handlebars
+      address.handlebars  - address history search and complaint type breakdown
     home.handlebars
     error.handlebars
   tasks/

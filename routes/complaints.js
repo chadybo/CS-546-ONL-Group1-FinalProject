@@ -196,23 +196,43 @@ router.route("/hotspots").get(async (req, res) => {
 
 router.get("/address", async (req, res) => {
   const { q } = req.query;
-  if (!q) {
+  const borough = typeof req.query.borough === "string" ? req.query.borough : "";
+  const query = typeof q === "string" ? q : "";
+  const addressView = {
+    title: "Address History",
+    query,
+    borough,
+    isManhattan: borough.toUpperCase() === "MANHATTAN",
+    isBrooklyn: borough.toUpperCase() === "BROOKLYN",
+    isQueens: borough.toUpperCase() === "QUEENS",
+    isBronx: borough.toUpperCase() === "BRONX",
+    isStatenIsland: borough.toUpperCase() === "STATEN ISLAND",
+  };
+
+  if (!query.trim()) {
     return res.render("complaints/address", {
-      title: "Address History",
-      results: null,
+      ...addressView,
+      results: [],
+      hasSearched: false,
     });
   }
+
   try {
-    const data = await getAddressHistory(q);
+    const data = await getAddressHistory(query, borough);
     return res.render("complaints/address", {
-      title: "Address History",
+      ...addressView,
       ...data,
     });
   } catch (e) {
-    return res.render("complaints/address", {
-      title: "Address History",
-      error: e,
-      results: null,
+    const isValidationError = typeof e === "string";
+    return res.status(isValidationError ? 400 : 500).render("complaints/address", {
+      ...addressView,
+      error: isValidationError
+        ? e
+        : "Address history is temporarily unavailable. Please try again.",
+      results: [],
+      hasSearched: false,
+      hasResults: false,
     });
   }
 });

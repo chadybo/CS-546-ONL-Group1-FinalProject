@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { nyc311cache } from "../config/mongoCollections.js";
+import { normalizeAddress } from "../helper.js";
 
 const SODA_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json";
 
@@ -27,6 +28,7 @@ export const refreshCache = async () => {
           complaintType: r.complaint_type,
           borough: r.borough,
           incidentAddress: r.incident_address,
+          normalizedAddress: normalizeAddress(r.incident_address),
           status: r.status,
           resolutionDescription: r.resolution_description || null,
           cachedAt: new Date(),

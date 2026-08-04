@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { dbConnection, closeConnection } from '../config/mongoConnection.js';
+import { normalizeAddress } from '../helper.js';
 
 const SODA_URL = 'https://data.cityofnewyork.us/resource/erm2-nwe9.json';
 
@@ -13,13 +14,15 @@ const seed = async () => {
   await db.collection('nyc311cache').createIndex({ complaintType: 1 });
   await db.collection('nyc311cache').createIndex({ createdDate: -1 });
   await db.collection('nyc311cache').createIndex({ incidentAddress: 1 });
+  await db.collection('nyc311cache').createIndex({ normalizedAddress: 1 });
 
   // Create indexes for other collections
   await db.collection('users').createIndex({ username: 1 }, { unique: true });
   await db.collection('users').createIndex({ email: 1 }, { unique: true });
-  await db.collection('complaints').createIndex({ address: 1 });
+  await db.collection('complaints').createIndex({ incidentAddress: 1 });
+  await db.collection('complaints').createIndex({ normalizedAddress: 1 });
   await db.collection('complaints').createIndex({ borough: 1 });
-  await db.collection('complaints').createIndex({ createdAt: -1 });
+  await db.collection('complaints').createIndex({ createdDate: -1 });
   await db.collection('hotspots').createIndex({ address: 1 }, { unique: true });
   await db.collection('hotspots').createIndex({ count: -1 });
 
@@ -47,6 +50,7 @@ const seed = async () => {
           complaintType: r.complaint_type,
           borough: r.borough,
           incidentAddress: r.incident_address,
+          normalizedAddress: normalizeAddress(r.incident_address),
           status: r.status,
           resolutionDescription: r.resolution_description || null,
           cachedAt: new Date()

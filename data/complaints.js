@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
+import { normalizeAddress } from "../helper.js";
 
 const VALID_TYPES = [
   "Loud Music/Party",
@@ -10,10 +11,6 @@ const VALID_TYPES = [
   "Loud Talking",
   "Other",
 ];
-
-// Normalizes an address string to use as a consistent hotspot key
-const normalizeAddress = (address) =>
-  address.toLowerCase().replace(/[.,#]/g, "").trim();
 
 // Inserts a new user complaint and updates the hotspot layer
 export const submitComplaint = async (
@@ -32,10 +29,12 @@ export const submitComplaint = async (
     throw "Description cannot exceed 500 characters";
 
   const col = await complaints();
+  const normalizedAddress = normalizeAddress(address);
 
   const newComplaint = {
     userId: new ObjectId(userId),
-    incidentAddress: normalizeAddress(address),
+    incidentAddress: normalizedAddress,
+    normalizedAddress,
     borough: borough.toUpperCase(),
     complaintType,
     resolutionDescription: description?.trim() || "",
@@ -53,7 +52,7 @@ export const submitComplaint = async (
   );
 
   // Update hotspot counts for this address
-  await upsertHotspot(normalizeAddress(address), borough);
+  await upsertHotspot(normalizedAddress, borough);
 
   return { _id: result.insertedId, ...newComplaint };
 };
