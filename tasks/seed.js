@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import { dbConnection, closeConnection } from '../config/mongoConnection.js';
-import { normalizeAddress } from '../helper.js';
+import { deriveComplaintCategory, normalizeAddress } from '../helper.js';
 
 const SODA_URL = 'https://data.cityofnewyork.us/resource/erm2-nwe9.json';
 
@@ -12,6 +12,7 @@ const seed = async () => {
   await db.collection('nyc311cache').createIndex({ uniqueKey: 1 }, { unique: true });
   await db.collection('nyc311cache').createIndex({ borough: 1 });
   await db.collection('nyc311cache').createIndex({ complaintType: 1 });
+  await db.collection('nyc311cache').createIndex({ complaintCategory: 1 });
   await db.collection('nyc311cache').createIndex({ createdDate: -1 });
   await db.collection('nyc311cache').createIndex({ incidentAddress: 1 });
   await db.collection('nyc311cache').createIndex({ normalizedAddress: 1 });
@@ -48,6 +49,11 @@ const seed = async () => {
           uniqueKey: r.unique_key,
           createdDate: new Date(r.created_date),
           complaintType: r.complaint_type,
+          descriptor: r.descriptor || null,
+          complaintCategory: deriveComplaintCategory(
+            r.descriptor,
+            r.complaint_type,
+          ),
           borough: r.borough,
           incidentAddress: r.incident_address,
           normalizedAddress: normalizeAddress(r.incident_address),

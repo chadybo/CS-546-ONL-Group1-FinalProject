@@ -710,6 +710,37 @@ tbody tr:hover {
   font-weight: 500;
   gap: 8px;
   padding: 5px 6px 5px 12px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
+}
+
+.complaint-type-pill:hover {
+  background: var(--gray-200);
+  border-color: var(--navy);
+  transform: translateY(-1px);
+}
+
+.complaint-type-pill:focus-visible {
+  outline: 3px solid rgba(10, 34, 57, 0.2);
+  outline-offset: 2px;
+}
+
+.complaint-type-pill.is-active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+
+.complaint-type-pill.is-active:hover {
+  background: var(--navy-light);
+}
+
+.complaint-type-pill.is-active .complaint-type-count {
+  background: var(--white);
+  color: var(--navy);
 }
 
 .complaint-type-count {
@@ -728,6 +759,16 @@ tbody tr:hover {
 .history-table td:first-child {
   color: var(--gray-700);
   white-space: nowrap;
+}
+
+.complaint-results-header {
+  color: var(--gray-700);
+  font-size: 13px;
+  margin: 0 0 10px 2px;
+}
+
+.complaint-results-header strong {
+  color: var(--navy);
 }
 
 .history-notes {

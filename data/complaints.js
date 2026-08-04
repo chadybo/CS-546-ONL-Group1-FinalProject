@@ -1,16 +1,7 @@
 import { ObjectId } from "mongodb";
 import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
-import { normalizeAddress } from "../helper.js";
-
-const VALID_TYPES = [
-  "Loud Music/Party",
-  "Construction",
-  "Barking Dog",
-  "Vehicle Idling",
-  "Loud Talking",
-  "Other",
-];
+import { COMPLAINT_CATEGORIES, normalizeAddress } from "../helper.js";
 
 // Inserts a new user complaint and updates the hotspot layer
 export const submitComplaint = async (
@@ -24,7 +15,8 @@ export const submitComplaint = async (
     throw "All required fields must be provided";
   address = address.trim();
   borough = borough.trim();
-  if (!VALID_TYPES.includes(complaintType)) throw "Invalid complaint type";
+  if (!COMPLAINT_CATEGORIES.includes(complaintType))
+    throw "Invalid complaint type";
   if (description && description.length > 500)
     throw "Description cannot exceed 500 characters";
 
@@ -37,6 +29,7 @@ export const submitComplaint = async (
     normalizedAddress,
     borough: borough.toUpperCase(),
     complaintType,
+    complaintCategory: complaintType,
     resolutionDescription: description?.trim() || "",
     status: "In Progress",
     createdDate: new Date(),
@@ -103,14 +96,24 @@ export const aggregateComplaintType = async () => {
 
   const nyc311result = await nyc311Data
     .aggregate([
-      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { $ifNull: ["$complaintCategory", "$complaintType"] },
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { count: -1 } },
     ])
     .toArray();
 
   const complaintresult = await complaintList
     .aggregate([
-      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { $ifNull: ["$complaintCategory", "$complaintType"] },
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { count: -1 } },
     ])
     .toArray();

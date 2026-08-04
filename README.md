@@ -16,7 +16,8 @@ Built for CS 546 Web Programming I at Stevens Institute of Technology.
 - Submit a noise complaint form with address normalization and hotspot upsert logic
 - Automatic hotspot detection: any address with 3 or more user complaints is flagged as a confirmed hotspot
 - Public address history search combining matching NYC 311 and user-submitted complaints
-- Complaint type breakdown for each searched address
+- Clickable complaint-type breakdown with single-type filtering for each searched address
+- Shared complaint categories across NYC 311 descriptors and user submissions while preserving the original 311 fields
 
 ---
 

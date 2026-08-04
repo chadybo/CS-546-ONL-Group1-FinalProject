@@ -3,7 +3,7 @@ import {
   hotspots,
   nyc311cache,
 } from "../config/mongoCollections.js";
-import { normalizeAddress } from "../helper.js";
+import { normalizeAddress, resolveComplaintCategory } from "../helper.js";
 
 const VALID_BOROUGHS = new Set([
   "MANHATTAN",
@@ -49,6 +49,33 @@ export const buildComplaintTypeBreakdown = (records = []) => {
       second.count - first.count ||
       first.complaintType.localeCompare(second.complaintType),
   );
+};
+
+export const filterComplaintsByType = (records = [], complaintType = "") => {
+  if (typeof complaintType !== "string" || !complaintType.trim()) {
+    return records;
+  }
+
+  const normalizedType = complaintType.trim().toLocaleLowerCase();
+  return records.filter(
+    (record) =>
+      typeof record.complaintType === "string" &&
+      record.complaintType.trim().toLocaleLowerCase() === normalizedType,
+  );
+};
+
+export const formatAddressHistoryComplaint = (record, source) => {
+  const formattedRecord = {
+    ...record,
+    complaintType: resolveComplaintCategory(record),
+    source,
+  };
+
+  if (source === "311") {
+    formattedRecord.nycComplaintType = record.complaintType;
+  }
+
+  return formattedRecord;
 };
 
 const buildAddressFilter = (query, normalizedAddress, borough) => {
@@ -105,8 +132,12 @@ const findAddressRecords = async (
   return [...uniqueRecords.values()];
 };
 
-// Returns all complaints from both sources for a given address
-export const getAddressHistory = async (query, borough = "") => {
+// Returns complaints from both sources for a given address and optional type.
+export const getAddressHistory = async (
+  query,
+  borough = "",
+  complaintType = "",
+) => {
   if (typeof query !== "string" || query.trim().length === 0) {
     throw "Address is required";
   }
@@ -121,6 +152,10 @@ export const getAddressHistory = async (query, borough = "") => {
 
   if (normalizedBorough && !VALID_BOROUGHS.has(normalizedBorough)) {
     throw "Invalid borough";
+  }
+
+  if (typeof complaintType !== "string" || complaintType.trim().length > 150) {
+    throw "Invalid complaint type";
   }
 
   const complaintCol = await complaints();
@@ -139,14 +174,12 @@ export const getAddressHistory = async (query, borough = "") => {
   ]);
 
   // Tag each record with its source
-  const tagged311 = nycComplaints.map((complaint) => ({
-    ...complaint,
-    source: "311",
-  }));
-  const taggedUser = userComplaints.map((complaint) => ({
-    ...complaint,
-    source: "user",
-  }));
+  const tagged311 = nycComplaints.map((complaint) =>
+    formatAddressHistoryComplaint(complaint, "311"),
+  );
+  const taggedUser = userComplaints.map((complaint) =>
+    formatAddressHistoryComplaint(complaint, "user"),
+  );
 
   // Merge and sort by date
   const combined = [...tagged311, ...taggedUser].sort(
@@ -154,18 +187,35 @@ export const getAddressHistory = async (query, borough = "") => {
       getTimestamp(second.createdDate) - getTimestamp(first.createdDate),
   );
   const typeBreakdown = buildComplaintTypeBreakdown(combined);
+  const requestedType = complaintType.trim();
+  const selectedType = requestedType
+    ? typeBreakdown.find(
+        (item) =>
+          item.complaintType.toLocaleLowerCase() ===
+          requestedType.toLocaleLowerCase(),
+      )?.complaintType
+    : "";
+
+  if (requestedType && !selectedType) {
+    throw "Complaint type not found for this address";
+  }
+
+  const visibleResults = filterComplaintsByType(combined, selectedType);
 
   return {
     query: query.trim(),
     borough: normalizedBorough ? formatBorough(normalizedBorough) : "",
-    results: combined,
+    results: visibleResults,
     hasSearched: true,
-    hasResults: combined.length > 0,
+    hasResults: visibleResults.length > 0,
     totalCount: combined.length,
+    visibleCount: visibleResults.length,
     nycCount: tagged311.length,
     userCount: taggedUser.length,
     typeBreakdown,
     hasTypeBreakdown: typeBreakdown.length > 0,
+    selectedComplaintType: selectedType,
+    isFiltered: Boolean(selectedType),
     topComplaintType: typeBreakdown[0]?.complaintType || null,
     isHotspot: taggedUser.length >= 3 || hotspot?.confirmedHotspot || false,
   };

@@ -64,19 +64,39 @@
     {{#if hasTypeBreakdown}}
       <div class="complaint-type-breakdown">
         <h3>Complaint type breakdown</h3>
-        <div class="complaint-type-pills" aria-label="Complaint type counts">
+        <nav class="complaint-type-pills" aria-label="Filter by complaint type">
+          <a
+            href="{{allComplaintsUrl}}"
+            class="complaint-type-pill{{#unless isFiltered}} is-active{{/unless}}"
+            {{#unless isFiltered}}aria-current="true"{{/unless}}
+          >
+            <span>All complaints:</span>
+            <span class="complaint-type-count">{{totalCount}}</span>
+          </a>
           {{#each typeBreakdown}}
-            <span class="complaint-type-pill">
+            <a
+              href="{{this.url}}"
+              class="complaint-type-pill{{#if this.isActive}} is-active{{/if}}"
+              {{#if this.isActive}}aria-current="true"{{/if}}
+            >
               <span>{{this.complaintType}}:</span>
               <span class="complaint-type-count">{{this.count}}</span>
-            </span>
+            </a>
           {{/each}}
-        </div>
+        </nav>
       </div>
     {{/if}}
   </div>
 
   {{#if hasResults}}
+    <div class="complaint-results-header" aria-live="polite">
+      {{#if isFiltered}}
+        Showing {{visibleCount}} of {{totalCount}} complaints for
+        <strong>{{selectedComplaintType}}</strong>
+      {{else}}
+        Showing all {{totalCount}} complaints
+      {{/if}}
+    </div>
     <div class="table-wrap">
       <table class="history-table">
         <thead>

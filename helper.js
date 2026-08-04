@@ -23,6 +23,92 @@ const ADDRESS_TOKEN_ALIASES = new Map([
   ["west", "w"],
 ]);
 
+export const COMPLAINT_CATEGORIES = Object.freeze([
+  "Loud Music/Party",
+  "Construction",
+  "Barking Dog",
+  "Vehicle Idling",
+  "Loud Talking",
+  "Other",
+]);
+
+const COMPLAINT_CATEGORY_LOOKUP = new Map(
+  COMPLAINT_CATEGORIES.map((category) => [
+    category.toLocaleLowerCase(),
+    category,
+  ]),
+);
+
+const getCanonicalComplaintCategory = (value) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return COMPLAINT_CATEGORY_LOOKUP.get(value.trim().toLocaleLowerCase()) || "";
+};
+
+// Maps NYC 311 descriptors and community complaint types into one shared taxonomy.
+export const deriveComplaintCategory = (
+  descriptor = "",
+  sourceComplaintType = "",
+) => {
+  const canonicalDescriptor = getCanonicalComplaintCategory(descriptor);
+  if (canonicalDescriptor) {
+    return canonicalDescriptor;
+  }
+
+  const canonicalSourceType = getCanonicalComplaintCategory(
+    sourceComplaintType,
+  );
+  if (canonicalSourceType) {
+    return canonicalSourceType;
+  }
+
+  const details = [descriptor, sourceComplaintType]
+    .filter((value) => typeof value === "string" && value.trim())
+    .join(" ")
+    .toLocaleLowerCase();
+
+  if (
+    details.includes("construction") ||
+    details.includes("jack hammer") ||
+    details.includes("jackhammer") ||
+    details.includes("pile driving")
+  ) {
+    return "Construction";
+  }
+
+  if (details.includes("bark") || details.includes("barking dog")) {
+    return "Barking Dog";
+  }
+
+  if (details.includes("idling")) {
+    return "Vehicle Idling";
+  }
+
+  if (details.includes("loud talking")) {
+    return "Loud Talking";
+  }
+
+  if (details.includes("music") || details.includes("party")) {
+    return "Loud Music/Party";
+  }
+
+  return "Other";
+};
+
+// Uses a stored category when available and derives one for legacy records.
+export const resolveComplaintCategory = (record = {}) => {
+  const storedCategory = getCanonicalComplaintCategory(
+    record.complaintCategory,
+  );
+
+  return (
+    storedCategory ||
+    deriveComplaintCategory(record.descriptor, record.complaintType)
+  );
+};
+
 // Produces the shared lookup key used by imported and user-submitted addresses.
 export const normalizeAddress = (address) => {
   if (typeof address !== "string") {
