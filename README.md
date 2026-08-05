@@ -18,6 +18,10 @@ Built for CS 546 Web Programming I at Stevens Institute of Technology.
 - Public address history search combining matching NYC 311 and user-submitted complaints
 - Clickable complaint-type breakdown with single-type filtering for each searched address
 - Shared complaint categories across NYC 311 descriptors and user submissions while preserving the original 311 fields
+- Route-specific titles, descriptions, canonical URLs, Open Graph tags, and Twitter card metadata
+- Schema.org JSON-LD for the website, web application, public collection pages, breadcrumbs, and complaint dataset
+- Search and AI discovery endpoints at `/robots.txt`, `/sitemap.xml`, and `/llms.txt`
+- Privacy-conscious indexing rules for account pages, filtered listings, and address-history results
 
 ---
 
@@ -75,7 +79,13 @@ MONGO_URI=mongodb://localhost:27017/
 DB_NAME=street_noise
 SESSION_SECRET=street-noise-secret-key
 PORT=3000
+SITE_URL=http://localhost:3000
 ```
+
+Set `SITE_URL` to the public HTTPS origin before deploying, for example
+`https://street-noise.example`. Canonical URLs, structured data, social metadata,
+the sitemap, and crawler files all use this value. Do not include a route or
+query string.
 
 ### 6. Seed the database
 
@@ -92,6 +102,50 @@ npm start
 ```
 
 Visit `http://localhost:3000` in your browser.
+
+### 8. Run the tests
+
+```
+npm test
+```
+
+---
+
+## Search and AI discovery
+
+The application generates discovery files from `SITE_URL`:
+
+- `/robots.txt` allows public search crawling, allows `OAI-SearchBot` on public
+  pages, and disables `GPTBot` training crawl by default.
+- `/sitemap.xml` contains only canonical public landing pages. It excludes
+  private routes, filtered URLs, and address-history query results.
+- `/llms.txt` provides a concise, machine-readable overview of the app, its
+  public pages, data provenance, known limitations, and indexing boundaries.
+
+Public landing pages include server-rendered canonical, Open Graph, Twitter,
+and Schema.org JSON-LD metadata. Filtered listing URLs and address-history
+results use `noindex` to avoid creating thin duplicate pages or publishing
+residential-address result URLs in search indexes.
+
+The crawler policy follows the published
+[OpenAI crawler controls](https://developers.openai.com/api/docs/bots). Search
+engine indexing controls follow the
+[Google Search Central robots guidance](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag).
+
+### Social and icon assets
+
+The project includes these brand assets for large social previews and browser
+icons:
+
+```
+public/images/social-preview.png  # 1200 x 630
+public/favicon.svg
+public/apple-touch-icon.png       # 180 x 180
+```
+
+The app checks for the files at startup. You can replace them in place with
+future brand revisions. Restart the server after changing an asset so the
+metadata availability check runs again.
 
 ---
 
@@ -111,6 +165,7 @@ street-noise/
     nyc311.js             - 311 API fetch and cache
   routes/
     index.js              - mounts all routes
+    discovery.js          - robots.txt, sitemap.xml, and llms.txt
     users.js              - register, login, logout, dashboard
     complaints.js         - submit complaint
   public/
@@ -130,7 +185,11 @@ street-noise/
     error.handlebars
   tasks/
     seed.js               - seeds nyc311cache and creates indexes
+  test/
+    addressHistory.test.js - address history and complaint category tests
+    seo.test.js            - metadata, crawler policy, sitemap, and JSON-LD tests
   app.js                  - Express app entry point
+  seo.js                  - centralized SEO, structured data, and crawler helpers
   package.json
   .env                    - not committed, create locally
 ```
