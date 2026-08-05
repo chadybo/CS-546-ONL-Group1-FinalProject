@@ -3,8 +3,12 @@ import { create } from "express-handlebars";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
 import configRoutes from "./routes/index.js";
+import discoveryRoutes from "./routes/discovery.js";
 import { refreshCache } from "./data/nyc311.js";
+import { appConfig } from "./config/settings.js";
+import { buildSeoForRequest, detectSeoAssets } from "./seo.js";
 
 dotenv.config();
 
@@ -14,7 +18,9 @@ refreshCache()
   .catch(console.error);
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = appConfig.port;
+const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
+const seoAssets = detectSeoAssets(publicDirectory, appConfig.siteUrl);
 
 // Set up handlebars
 const hbs = create({
@@ -47,6 +53,27 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
 app.use("/public", express.static("public"));
+
+// Serve crawler discovery files without creating a database-backed session.
+app.use(discoveryRoutes);
+
+// Build safe, route-specific metadata before rendering any page.
+app.use((req, res, next) => {
+  const seo = buildSeoForRequest({
+    siteUrl: appConfig.siteUrl,
+    pathname: req.path,
+    queryKeys: Object.keys(req.query),
+    assets: seoAssets,
+  });
+
+  res.locals.seo = seo;
+
+  if (seo.robots.startsWith("noindex")) {
+    res.set("X-Robots-Tag", seo.robots);
+  }
+
+  next();
+});
 
 // Session setup with MongoDB store
 app.use(
