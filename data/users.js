@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import bcrypt from 'bcrypt';
 import { users } from '../config/mongoCollections.js';
 import { complaints as complaintsCollection } from '../config/mongoCollections.js';
+import { nyc311cache as nyc311Collection } from '../config/mongoCollections.js';
 
 const SALT_ROUNDS = 12;
 
@@ -58,6 +59,7 @@ export const getUserDashboard = async (userId) => {
 
   const userCol = await users();
   const complaintCol = await complaintsCollection();
+  const nyc311Col = await nyc311Collection();
 
   const user = await userCol.findOne({ _id: new ObjectId(userId) });
   if (!user) throw 'User not found';
@@ -68,13 +70,19 @@ export const getUserDashboard = async (userId) => {
     .sort({ createdDate: -1 })
     .toArray();
 
-  // Get complaints this user has bookmarked
-  const bookmarks = user.bookmarks?.length
-    ? await complaintCol
-        .find({ _id: { $in: user.bookmarks } })
-        .sort({ createdDate: -1 })
-        .toArray()
-    : [];
+  // Get complaints this user has bookmarked, from both user complaints and the 311 cache
+  let bookmarks = [];
+  if (user.bookmarks?.length) {
+    const userBookmarks = await complaintCol
+      .find({ _id: { $in: user.bookmarks } })
+      .toArray();
+    const nyc311Bookmarks = await nyc311Col
+      .find({ _id: { $in: user.bookmarks } })
+      .toArray();
+    bookmarks = userBookmarks
+      .concat(nyc311Bookmarks)
+      .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+  }
 
   return { submittedComplaints, bookmarks };
 };
@@ -133,7 +141,11 @@ export const addBookmark = async (userId, complaintId) => {
   if (!complaintId || !ObjectId.isValid(complaintId)) throw 'Valid complaint ID is required';
 
   const complaintCol = await complaintsCollection();
-  const complaint = await complaintCol.findOne({ _id: new ObjectId(complaintId) });
+  let complaint = await complaintCol.findOne({ _id: new ObjectId(complaintId) });
+  if (!complaint) {
+    const nyc311Col = await nyc311Collection();
+    complaint = await nyc311Col.findOne({ _id: new ObjectId(complaintId) });
+  }
   if (!complaint) throw 'Complaint not found';
 
   const userCol = await users();

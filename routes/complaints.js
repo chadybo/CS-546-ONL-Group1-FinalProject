@@ -6,10 +6,12 @@ import {
   sortDate,
   shuffleComplaints,
   resolveComplaint,
+  getComplaintById,
 } from "../data/complaints.js";
-import { getAllHotspots } from "../data/hotspots.js";
+import { getAllHotspots, getHotspotByAddress } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
 import { getAddressHistory } from "../data/addressHistory.js";
+import { isBookmarked } from "../data/users.js";
 import { geocodePin } from "../helper.js";
 
 const router = Router();
@@ -258,6 +260,41 @@ router.get("/common", async (req, res) => {
     });
   } catch (e) {
     return res.status(500).render("error", { message: e });
+  }
+});
+
+// Complaint detail page — full info, hotspot badge, bookmark button, resolved badge
+router.get("/:id", async (req, res) => {
+  try {
+    const complaint = await getComplaintById(req.params.id);
+    const hotspot = await getHotspotByAddress(complaint.incidentAddress);
+
+    const bookmarked = req.session.userId
+      ? await isBookmarked(req.session.userId, req.params.id)
+      : false;
+
+    const isOwner =
+      !!req.session.userId &&
+      complaint.userId?.toString() === req.session.userId;
+    const canResolve =
+      complaint.source === "user" &&
+      complaint.status !== "resolved" &&
+      (isOwner || req.session.role === "admin");
+
+    return res.render("complaints/detail", {
+      title: "Complaint Details",
+      complaint,
+      complaintId: req.params.id,
+      isHotspot: hotspot?.confirmedHotspot || false,
+      topComplaintType: hotspot?.topComplaintType || null,
+      isResolved: complaint.status === "resolved",
+      is311: complaint.source === "311",
+      loggedIn: !!req.session.userId,
+      isBookmarked: bookmarked,
+      canResolve,
+    });
+  } catch (e) {
+    return res.status(404).render("error", { message: e });
   }
 });
 
