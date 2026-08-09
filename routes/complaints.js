@@ -5,6 +5,7 @@ import {
   aggregateComplaintType,
   sortDate,
   shuffleComplaints,
+  resolveComplaint,
 } from "../data/complaints.js";
 import { getAllHotspots } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
@@ -257,6 +258,22 @@ router.get("/common", async (req, res) => {
     });
   } catch (e) {
     return res.status(500).render("error", { message: e });
+  }
+});
+
+// Mark a complaint resolved — owner or admin only, re-runs hotspot upsert
+router.put("/:id/resolve", async (req, res) => {
+  if (!req.session.userId)
+    return res.status(401).json({ error: "Login required" });
+  try {
+    const updated = await resolveComplaint(
+      req.params.id,
+      req.session.userId,
+      req.session.role,
+    );
+    return res.status(200).json(updated);
+  } catch (e) {
+    return res.status(400).json({ error: e.toString() });
   }
 });
 
