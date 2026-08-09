@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, loginUser, getUserDashboard  } from '../data/users.js';
+import { registerUser, loginUser, getUserDashboard, addBookmark, removeBookmark } from '../data/users.js';
 
 const router = Router();
 
@@ -49,6 +49,28 @@ router.get('/logout', (req, res) => {
   return res.redirect('/');
 });
 
+
+// Add a complaint to bookmarks — login required
+router.post('/bookmark/:id', async (req, res) => {
+  if (!req.session.userId) return res.redirect('/users/login');
+  try {
+    await addBookmark(req.session.userId, req.params.id);
+    return res.redirect(req.get('Referrer') || '/users/dashboard');
+  } catch (e) {
+    return res.status(400).render('error', { message: e });
+  }
+});
+
+// Remove a complaint from bookmarks — login required
+router.delete('/bookmark/:id', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Login required' });
+  try {
+    await removeBookmark(req.session.userId, req.params.id);
+    return res.status(200).json({ success: true });
+  } catch (e) {
+    return res.status(400).json({ error: e.toString() });
+  }
+});
 
 // User dashboard — requires login
 router.get('/dashboard', async (req, res) => {

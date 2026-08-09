@@ -33,8 +33,10 @@
             <td>
               {{#if (eq this.status 'open')}}
                 <span class="badge badge-open">Open</span>
-              {{else}}
+              {{else if (eq this.status 'resolved')}}
                 <span class="badge badge-resolved">Resolved</span>
+              {{else}}
+                <span class="badge badge-open">{{this.status}}</span>
               {{/if}}
             </td>
           </tr>

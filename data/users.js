@@ -126,3 +126,40 @@ export const deleteComplaint = async (complaintId) => {
   const { upsertHotspot } = await import('./hotspots.js');
   await upsertHotspot(complaint.incidentAddress, complaint.borough);
 };
+
+// Adds a complaint to a user's bookmarks (no-op if already bookmarked)
+export const addBookmark = async (userId, complaintId) => {
+  if (!userId) throw 'User ID is required';
+  if (!complaintId || !ObjectId.isValid(complaintId)) throw 'Valid complaint ID is required';
+
+  const complaintCol = await complaintsCollection();
+  const complaint = await complaintCol.findOne({ _id: new ObjectId(complaintId) });
+  if (!complaint) throw 'Complaint not found';
+
+  const userCol = await users();
+  await userCol.updateOne(
+    { _id: new ObjectId(userId) },
+    { $addToSet: { bookmarks: new ObjectId(complaintId) } }
+  );
+};
+
+// Removes a complaint from a user's bookmarks
+export const removeBookmark = async (userId, complaintId) => {
+  if (!userId) throw 'User ID is required';
+  if (!complaintId || !ObjectId.isValid(complaintId)) throw 'Valid complaint ID is required';
+
+  const userCol = await users();
+  await userCol.updateOne(
+    { _id: new ObjectId(userId) },
+    { $pull: { bookmarks: new ObjectId(complaintId) } }
+  );
+};
+
+// Checks whether a user has a given complaint bookmarked
+export const isBookmarked = async (userId, complaintId) => {
+  if (!userId || !complaintId) return false;
+  const userCol = await users();
+  const user = await userCol.findOne({ _id: new ObjectId(userId) });
+  if (!user?.bookmarks?.length) return false;
+  return user.bookmarks.some((b) => b.toString() === complaintId.toString());
+};

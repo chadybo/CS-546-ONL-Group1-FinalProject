@@ -47,6 +47,17 @@ app.use(
   }),
 );
 
+// Make the logged-in user available to every view (nav login/logout state)
+app.use((req, res, next) => {
+  if (req.session.userId) {
+    res.locals.user = {
+      username: req.session.username,
+      role: req.session.role,
+    };
+  }
+  next();
+});
+
 configRoutes(app);
 
 app.listen(port, () => {
