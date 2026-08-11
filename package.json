@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    "seed": "node tasks/seed.js"
+    "seed": "node tasks/seed.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

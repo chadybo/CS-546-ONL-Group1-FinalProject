@@ -597,6 +597,34 @@ tbody tr:hover {
 /* ================================
    ADDRESS HISTORY
 ================================ */
+.address-search-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.address-search-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.address-search-form .form-group {
+  margin-bottom: 0;
+}
+
+.address-search-action {
+  display: flex;
+}
+
+.address-search-action .btn {
+  white-space: nowrap;
+}
+
 .addr-summary {
   background: var(--white);
   border: 1px solid var(--gray-200);
@@ -610,6 +638,14 @@ tbody tr:hover {
   font-size: 20px;
   font-weight: 700;
   color: var(--navy);
+  margin-bottom: 0;
+}
+
+.addr-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -640,6 +676,129 @@ tbody tr:hover {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 2px;
+}
+
+.complaint-type-breakdown {
+  border-top: 1px solid var(--gray-200);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.complaint-type-breakdown h3 {
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.complaint-type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.complaint-type-pill {
+  align-items: center;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: 999px;
+  color: var(--navy);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
+}
+
+.complaint-type-pill:hover {
+  background: var(--gray-200);
+  border-color: var(--navy);
+  transform: translateY(-1px);
+}
+
+.complaint-type-pill:focus-visible {
+  outline: 3px solid rgba(10, 34, 57, 0.2);
+  outline-offset: 2px;
+}
+
+.complaint-type-pill.is-active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+
+.complaint-type-pill.is-active:hover {
+  background: var(--navy-light);
+}
+
+.complaint-type-pill.is-active .complaint-type-count {
+  background: var(--white);
+  color: var(--navy);
+}
+
+.complaint-type-count {
+  align-items: center;
+  background: var(--navy);
+  border-radius: 999px;
+  color: var(--white);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  justify-content: center;
+  min-width: 24px;
+  padding: 2px 7px;
+}
+
+.history-table td:first-child {
+  color: var(--gray-700);
+  white-space: nowrap;
+}
+
+.complaint-results-header {
+  color: var(--gray-700);
+  font-size: 13px;
+  margin: 0 0 10px 2px;
+}
+
+.complaint-results-header strong {
+  color: var(--navy);
+}
+
+.history-notes {
+  min-width: 220px;
+}
+
+.address-empty-state {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+}
+
+.address-empty-state span {
+  display: block;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .address-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .address-search-action .btn {
+    width: 100%;
+  }
+
+  .addr-summary-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 /* ================================

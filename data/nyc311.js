@@ -1,5 +1,10 @@
 import fetch from "node-fetch";
 import { nyc311cache } from "../config/mongoCollections.js";
+import {
+  deriveComplaintCategory,
+  normalizeAddress,
+  resolveComplaintCategory,
+} from "../helper.js";
 
 const SODA_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json";
 
@@ -25,8 +30,14 @@ export const refreshCache = async () => {
           uniqueKey: r.unique_key,
           createdDate: new Date(r.created_date),
           complaintType: r.complaint_type,
+          descriptor: r.descriptor || null,
+          complaintCategory: deriveComplaintCategory(
+            r.descriptor,
+            r.complaint_type,
+          ),
           borough: r.borough,
           incidentAddress: r.incident_address,
+          normalizedAddress: normalizeAddress(r.incident_address),
           status: r.status,
           resolutionDescription: r.resolution_description || null,
           cachedAt: new Date(),
@@ -52,13 +63,13 @@ export const getCached311 = async ({
   const filter = {};
 
   if (borough) filter.borough = borough.trim().toUpperCase();
-  if (complaintType)
-    filter.complaintType = { $regex: complaintType, $options: "i" };
   if (search) {
     const regex = { $regex: search.trim(), $options: "i" };
     filter.$or = [
       { incidentAddress: regex },
       { complaintType: regex },
+      { complaintCategory: regex },
+      { descriptor: regex },
       { resolutionDescription: regex },
       { borough: regex },
     ];
@@ -73,8 +84,21 @@ export const getCached311 = async ({
   // const skip = (page - 1) * limit;
 
   const results = await col.find(filter).sort({ createdDate: -1 }).toArray();
+  const categorizedResults = results.map((record) => ({
+    ...record,
+    nycComplaintType: record.complaintType,
+    complaintType: resolveComplaintCategory(record),
+  }));
 
-  return results;
+  if (complaintType) {
+    const requestedType = complaintType.trim().toLocaleLowerCase();
+    return categorizedResults.filter(
+      (record) =>
+        record.complaintType.toLocaleLowerCase() === requestedType,
+    );
+  }
+
+  return categorizedResults;
 };
 
 // Returns complaint counts grouped by month for a given borough
