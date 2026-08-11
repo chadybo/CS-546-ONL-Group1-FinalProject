@@ -36,7 +36,7 @@ Built for CS 546 Web Programming I at Stevens Institute of Technology.
 
 Make sure you have the following installed:
 
-- Node.js v16 or higher
+- Node.js v18 or higher
 - MongoDB Community Edition running locally
 
 To start MongoDB on Mac:
