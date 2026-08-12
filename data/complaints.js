@@ -1,19 +1,7 @@
 import { ObjectId } from "mongodb";
 import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
-
-const VALID_TYPES = [
-  "Loud Music/Party",
-  "Construction",
-  "Barking Dog",
-  "Vehicle Idling",
-  "Loud Talking",
-  "Other",
-];
-
-// Normalizes an address string to use as a consistent hotspot key
-const normalizeAddress = (address) =>
-  address.toLowerCase().replace(/[.,#]/g, "").trim();
+import { COMPLAINT_CATEGORIES, normalizeAddress } from "../helper.js";
 
 // Inserts a new user complaint and updates the hotspot layer
 export const submitComplaint = async (
@@ -27,17 +15,21 @@ export const submitComplaint = async (
     throw "All required fields must be provided";
   address = address.trim();
   borough = borough.trim();
-  if (!VALID_TYPES.includes(complaintType)) throw "Invalid complaint type";
+  if (!COMPLAINT_CATEGORIES.includes(complaintType))
+    throw "Invalid complaint type";
   if (description && description.length > 500)
     throw "Description cannot exceed 500 characters";
 
   const col = await complaints();
+  const normalizedAddress = normalizeAddress(address);
 
   const newComplaint = {
     userId: new ObjectId(userId),
-    incidentAddress: normalizeAddress(address),
+    incidentAddress: normalizedAddress,
+    normalizedAddress,
     borough: borough.toUpperCase(),
     complaintType,
+    complaintCategory: complaintType,
     resolutionDescription: description?.trim() || "",
     status: "In Progress",
     createdDate: new Date(),
@@ -53,7 +45,7 @@ export const submitComplaint = async (
   );
 
   // Update hotspot counts for this address
-  await upsertHotspot(normalizeAddress(address), borough);
+  await upsertHotspot(normalizedAddress, borough);
 
   return { _id: result.insertedId, ...newComplaint };
 };
@@ -104,14 +96,24 @@ export const aggregateComplaintType = async () => {
 
   const nyc311result = await nyc311Data
     .aggregate([
-      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { $ifNull: ["$complaintCategory", "$complaintType"] },
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { count: -1 } },
     ])
     .toArray();
 
   const complaintresult = await complaintList
     .aggregate([
-      { $group: { _id: "$complaintType", count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { $ifNull: ["$complaintCategory", "$complaintType"] },
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { count: -1 } },
     ])
     .toArray();

@@ -1,60 +1,138 @@
-<h1>Address History</h1>
+<div class="page-header">
+  <h1>Address History</h1>
+  <p>Search an address to see its complete history across NYC 311 and community submissions.</p>
+</div>
 
-<form method="GET" action="/complaints/address">
-  <input type="text" name="q" value="{{query}}" placeholder="e.g. 251 W 30th St Manhattan" required />
-  <button type="submit">Search</button>
-</form>
+<div class="address-search-card">
+  <form method="GET" action="/complaints/address" class="address-search-form">
+    <div class="form-group">
+      <label for="address-query">Street address</label>
+      <input
+        id="address-query"
+        type="text"
+        name="q"
+        value="{{query}}"
+        placeholder="e.g. 251 W 30th St"
+        maxlength="150"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="address-borough">Borough</label>
+      <select id="address-borough" name="borough">
+        <option value="">All boroughs</option>
+        <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
+        <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
+        <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
+        <option value="Bronx" {{#if isBronx}}selected{{/if}}>Bronx</option>
+        <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
+      </select>
+    </div>
+    <div class="address-search-action">
+      <button type="submit" class="btn btn-primary">Search history</button>
+    </div>
+  </form>
+</div>
 
 {{#if error}}
-  <p class="error">{{error}}</p>
+  <div class="alert alert-error" role="alert">{{error}}</div>
 {{/if}}
 
-{{#if results}}
+{{#if hasSearched}}
   <div class="addr-summary">
-    <h2>{{query}}</h2>
-    {{#if isHotspot}}
-      <span class="badge-hotspot">Confirmed Hotspot</span>
-    {{/if}}
-    <div class="addr-stats">
-      <span>Total: {{totalCount}}</span>
-      <span>From 311: {{nycCount}}</span>
-      <span>User submitted: {{userCount}}</span>
-      {{#if topComplaintType}}
-        <span>Top type: {{topComplaintType}}</span>
+    <div class="addr-summary-heading">
+      <h2>{{query}}{{#if borough}}, {{borough}}{{/if}}</h2>
+      {{#if isHotspot}}
+        <span class="badge badge-hotspot">Confirmed Hotspot</span>
       {{/if}}
     </div>
+    <div class="addr-stats">
+      <div class="addr-stat">
+        <div class="addr-stat-n">{{totalCount}}</div>
+        <div class="addr-stat-l">Total</div>
+      </div>
+      <div class="addr-stat">
+        <div class="addr-stat-n">{{nycCount}}</div>
+        <div class="addr-stat-l">From 311</div>
+      </div>
+      <div class="addr-stat">
+        <div class="addr-stat-n">{{userCount}}</div>
+        <div class="addr-stat-l">User submitted</div>
+      </div>
+    </div>
+
+    {{#if hasTypeBreakdown}}
+      <div class="complaint-type-breakdown">
+        <h3>Complaint type breakdown</h3>
+        <nav class="complaint-type-pills" aria-label="Filter by complaint type">
+          <a
+            href="{{allComplaintsUrl}}"
+            class="complaint-type-pill{{#unless isFiltered}} is-active{{/unless}}"
+            {{#unless isFiltered}}aria-current="true"{{/unless}}
+          >
+            <span>All complaints:</span>
+            <span class="complaint-type-count">{{totalCount}}</span>
+          </a>
+          {{#each typeBreakdown}}
+            <a
+              href="{{this.url}}"
+              class="complaint-type-pill{{#if this.isActive}} is-active{{/if}}"
+              {{#if this.isActive}}aria-current="true"{{/if}}
+            >
+              <span>{{this.complaintType}}:</span>
+              <span class="complaint-type-count">{{this.count}}</span>
+            </a>
+          {{/each}}
+        </nav>
+      </div>
+    {{/if}}
   </div>
 
-  {{#if results.length}}
-    <table class="history-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Type</th>
-          <th>Source</th>
-          <th>Status</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each results}}
+  {{#if hasResults}}
+    <div class="complaint-results-header" aria-live="polite">
+      {{#if isFiltered}}
+        Showing {{visibleCount}} of {{totalCount}} complaints for
+        <strong>{{selectedComplaintType}}</strong>
+      {{else}}
+        Showing all {{totalCount}} complaints
+      {{/if}}
+    </div>
+    <div class="table-wrap">
+      <table class="history-table">
+        <thead>
           <tr>
-            <td>{{this.createdDate}}</td>
-            <td>{{this.complaintType}}</td>
-            <td>
-              {{#if (eq this.source '311')}}
-                <span class="badge-311">311</span>
-              {{else}}
-                <span class="badge-user">User</span>
-              {{/if}}
-            </td>
-            <td>{{this.status}}</td>
-            <td>{{this.resolutionDescription}}</td>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Borough</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Notes</th>
           </tr>
-        {{/each}}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {{#each results}}
+            <tr>
+              <td>{{formatDate this.createdDate}}</td>
+              <td>{{this.complaintType}}</td>
+              <td>{{this.borough}}</td>
+              <td>
+                {{#if (eq this.source "311")}}
+                  <span class="badge badge-311">311</span>
+                {{else}}
+                  <span class="badge badge-user">User</span>
+                {{/if}}
+              </td>
+              <td>{{this.status}}</td>
+              <td class="history-notes">{{this.resolutionDescription}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
   {{else}}
-    <p>No complaints found for this address.</p>
+    <div class="empty-state address-empty-state">
+      <p>No complaints were found for this address.</p>
+      <span>Check the spelling or try selecting a different borough.</span>
+    </div>
   {{/if}}
 {{/if}}

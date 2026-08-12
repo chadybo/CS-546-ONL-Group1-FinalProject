@@ -12,18 +12,11 @@ import { getAllHotspots, getHotspotByAddress } from "../data/hotspots.js";
 import { getCached311, getComplaintTrends } from "../data/nyc311.js";
 import { getAddressHistory } from "../data/addressHistory.js";
 import { isBookmarked } from "../data/users.js";
-import { geocodePin } from "../helper.js";
+import { COMPLAINT_CATEGORIES, geocodePin } from "../helper.js";
 
 const router = Router();
 
-const TYPES = [
-  "Loud Music/Party",
-  "Construction",
-  "Barking Dog",
-  "Vehicle Idling",
-  "Loud Talking",
-  "Other",
-];
+const TYPES = COMPLAINT_CATEGORIES;
 
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
@@ -199,23 +192,67 @@ router.route("/hotspots").get(async (req, res) => {
 
 router.get("/address", async (req, res) => {
   const { q } = req.query;
-  if (!q) {
+  const borough = typeof req.query.borough === "string" ? req.query.borough : "";
+  const complaintType =
+    typeof req.query.type === "string" ? req.query.type : "";
+  const query = typeof q === "string" ? q : "";
+  const addressView = {
+    title: "Address History",
+    query,
+    borough,
+    selectedComplaintType: complaintType,
+    isManhattan: borough.toUpperCase() === "MANHATTAN",
+    isBrooklyn: borough.toUpperCase() === "BROOKLYN",
+    isQueens: borough.toUpperCase() === "QUEENS",
+    isBronx: borough.toUpperCase() === "BRONX",
+    isStatenIsland: borough.toUpperCase() === "STATEN ISLAND",
+  };
+
+  if (!query.trim()) {
     return res.render("complaints/address", {
-      title: "Address History",
-      results: null,
+      ...addressView,
+      results: [],
+      hasSearched: false,
     });
   }
+
   try {
-    const data = await getAddressHistory(q);
+    const data = await getAddressHistory(query, borough, complaintType);
+    const buildAddressHistoryUrl = (type = "") => {
+      const params = new URLSearchParams({ q: data.query });
+
+      if (data.borough) {
+        params.set("borough", data.borough);
+      }
+
+      if (type) {
+        params.set("type", type);
+      }
+
+      return `/complaints/address?${params.toString()}`;
+    };
+    const typeBreakdown = data.typeBreakdown.map((item) => ({
+      ...item,
+      url: buildAddressHistoryUrl(item.complaintType),
+      isActive: item.complaintType === data.selectedComplaintType,
+    }));
+
     return res.render("complaints/address", {
-      title: "Address History",
+      ...addressView,
       ...data,
+      typeBreakdown,
+      allComplaintsUrl: buildAddressHistoryUrl(),
     });
   } catch (e) {
-    return res.render("complaints/address", {
-      title: "Address History",
-      error: e,
-      results: null,
+    const isValidationError = typeof e === "string";
+    return res.status(isValidationError ? 400 : 500).render("complaints/address", {
+      ...addressView,
+      error: isValidationError
+        ? e
+        : "Address history is temporarily unavailable. Please try again.",
+      results: [],
+      hasSearched: false,
+      hasResults: false,
     });
   }
 });
