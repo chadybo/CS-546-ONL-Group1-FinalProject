@@ -5,6 +5,7 @@ import MongoStore from "connect-mongo";
 import dotenv from "dotenv";
 import configRoutes from "./routes/index.js";
 import { refreshCache } from "./data/nyc311.js";
+import { sanitizeBody } from "./middleware/middleware-sanitize.js";
 
 dotenv.config();
 
@@ -45,6 +46,9 @@ app.set("views", "./views");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Sanitize all request bodies against XSS
+app.use(sanitizeBody);
+
 // Serve static files
 app.use("/public", express.static("public"));
 
@@ -60,6 +64,14 @@ app.use(
     cookie: { maxAge: 1000 * 60 * 60 * 24 },
   }),
 );
+
+// Expose logged-in state to every template (nav bar, etc.)
+app.use((req, res, next) => {
+  res.locals.user = req.session.userId
+    ? { username: req.session.username, role: req.session.role }
+    : null;
+  next();
+});
 
 configRoutes(app);
 

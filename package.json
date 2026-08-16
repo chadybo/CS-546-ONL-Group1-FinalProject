@@ -17,7 +17,8 @@
     "express-handlebars": "^7.1.2",
     "express-session": "^1.17.3",
     "mongodb": "^6.3.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "xss": "^1.0.15"
   },
   "allowScripts": {
     "bcrypt@6.0.0": true

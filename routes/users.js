@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, loginUser, getUserDashboard  } from '../data/users.js';
+import { registerUser, loginUser, getUserDashboard } from '../data/users.js';
 
 const router = Router();
 
@@ -29,17 +29,22 @@ router.get('/login', (req, res) => {
   return res.render('users/login', { title: 'Login' });
 });
 
-// Handle login form submission
+// Handle login form submission — called via jQuery AJAX, responds with JSON
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
   try {
     const user = await loginUser(email, password);
     req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.role = user.role;
-    return res.redirect('/users/dashboard');
+    return res.status(200).json({ success: true, redirect: '/users/dashboard' });
   } catch (e) {
-    return res.status(400).render('users/login', { title: 'Login', error: e });
+    return res.status(400).json({ error: e.toString ? e.toString() : e });
   }
 });
 
@@ -48,7 +53,6 @@ router.get('/logout', (req, res) => {
   req.session.destroy();
   return res.redirect('/');
 });
-
 
 // User dashboard — requires login
 router.get('/dashboard', async (req, res) => {
