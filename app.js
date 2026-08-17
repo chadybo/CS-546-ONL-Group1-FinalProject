@@ -2,13 +2,14 @@ import express from "express";
 import { create } from "express-handlebars";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import flash from "connect-flash";
 import dotenv from "dotenv";
+import xss from "xss";
 import configRoutes from "./routes/index.js";
 import { refreshCache } from "./data/nyc311.js";
 
 dotenv.config();
 
-// Refresh 311 cache on startup
 refreshCache()
   .then(() => console.log("311 cache refreshed"))
   .catch(console.error);
@@ -16,7 +17,6 @@ refreshCache()
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Set up handlebars
 const hbs = create({
   defaultLayout: "main",
   helpers: {
@@ -26,7 +26,6 @@ const hbs = create({
       if (Number.isNaN(date.getTime())) {
         return "Unknown";
       }
-
       return new Intl.DateTimeFormat("en-US", {
         year: "numeric",
         month: "short",
@@ -41,14 +40,10 @@ app.engine("handlebars", hbs.engine);
 app.set("view engine", "handlebars");
 app.set("views", "./views");
 
-// Parse request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files
 app.use("/public", express.static("public"));
 
-// Session setup with MongoDB store
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -60,6 +55,28 @@ app.use(
     cookie: { maxAge: 1000 * 60 * 60 * 24 },
   }),
 );
+
+app.use(flash());
+
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === "object") {
+    for (const key in req.body) {
+      if (typeof req.body[key] === "string") {
+        req.body[key] = xss(req.body[key]);
+      }
+    }
+  }
+  next();
+});
+
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash("success");
+  res.locals.errorMessage = req.flash("error");
+  res.locals.user = req.session.userId
+    ? { username: req.session.username, role: req.session.role }
+    : null;
+  next();
+});
 
 configRoutes(app);
 
