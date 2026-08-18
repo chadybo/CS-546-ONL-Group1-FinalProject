@@ -36,6 +36,7 @@ const hbs = create({
     },
   },
 });
+
 app.engine("handlebars", hbs.engine);
 app.set("view engine", "handlebars");
 app.set("views", "./views");
@@ -58,9 +59,11 @@ app.use(
 
 app.use(flash());
 
+// Sanitize all string inputs against XSS (skip passwords: they're hashed, not rendered)
 app.use((req, res, next) => {
   if (req.body && typeof req.body === "object") {
     for (const key in req.body) {
+      if (key === "password" || key === "confirmPassword") continue;
       if (typeof req.body[key] === "string") {
         req.body[key] = xss(req.body[key]);
       }
@@ -69,6 +72,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Expose flash messages and the logged-in user to every view (nav login/logout state)
 app.use((req, res, next) => {
   res.locals.successMessage = req.flash("success");
   res.locals.errorMessage = req.flash("error");
