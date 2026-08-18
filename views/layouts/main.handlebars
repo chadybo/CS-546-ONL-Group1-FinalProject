@@ -41,6 +41,8 @@
         </div>
       </div>
     </nav>
+{{#if successMessage}}<div class="alert alert-success">{{successMessage}}</div>{{/if}}
+{{#if errorMessage}}<div class="alert alert-error">{{errorMessage}}</div>{{/if}}
     <main class="main-content">
       {{{body}}}
     </main>

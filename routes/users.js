@@ -23,12 +23,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Show login form
-router.get('/login', (req, res) => {
-  if (req.session.userId) return res.redirect('/');
-  return res.render('users/login', { title: 'Login' });
-});
-
 // Handle login form submission
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -37,11 +31,18 @@ router.post('/login', async (req, res) => {
     req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.role = user.role;
-    return res.redirect('/users/dashboard');
+    return res.status(200).json({ success: true });
   } catch (e) {
-    return res.status(400).render('users/login', { title: 'Login', error: e });
+    return res.status(400).json({ error: typeof e === 'string' ? e : 'Invalid email or password' });
   }
 });
+
+// Show login form
+router.get('/login', (req, res) => {
+  if (req.session.userId) return res.redirect('/');
+  return res.render('users/login', { title: 'Login' });
+});
+
 
 // Destroy session and redirect home
 router.get('/logout', (req, res) => {
