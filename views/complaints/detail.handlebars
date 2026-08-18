@@ -1,0 +1,89 @@
+<div style="max-width:600px;margin:0 auto">
+  <div class="page-header">
+    <h1>{{complaint.complaintType}}</h1>
+    <p>{{complaint.incidentAddress}}, {{complaint.borough}}</p>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      {{#if isResolved}}
+        <span class="badge badge-resolved">Resolved</span>
+      {{else}}
+        <span class="badge badge-open">{{complaint.status}}</span>
+      {{/if}}
+      {{#if isHotspot}}
+        <span class="badge badge-hotspot">Confirmed Hotspot</span>
+      {{/if}}
+      {{#if is311}}
+        <span class="badge badge-311">NYC 311 Report</span>
+      {{else}}
+        <span class="badge badge-user">User Submitted</span>
+      {{/if}}
+    </div>
+
+    <div class="form-group">
+      <label>Address</label>
+      <p>{{complaint.incidentAddress}}</p>
+    </div>
+    <div class="form-group">
+      <label>Borough</label>
+      <p>{{complaint.borough}}</p>
+    </div>
+    <div class="form-group">
+      <label>Complaint Type</label>
+      <p>{{complaint.complaintType}}</p>
+    </div>
+    {{#if topComplaintType}}
+      <div class="form-group">
+        <label>Most Reported Type at This Address</label>
+        <p>{{topComplaintType}}</p>
+      </div>
+    {{/if}}
+    <div class="form-group">
+      <label>Date Reported</label>
+      <p>{{complaint.createdDate}}</p>
+    </div>
+    {{#if complaint.resolutionDescription}}
+      <div class="form-group">
+        <label>Description</label>
+        <p>{{complaint.resolutionDescription}}</p>
+      </div>
+    {{/if}}
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      {{#if loggedIn}}
+        {{#if isBookmarked}}
+          <button type="button" id="bookmark-btn" class="btn btn-outline">Remove Bookmark</button>
+        {{else}}
+          <form method="POST" action="/users/bookmark/{{complaintId}}">
+            <button type="submit" class="btn btn-outline">Add Bookmark</button>
+          </form>
+        {{/if}}
+
+        {{#if canResolve}}
+          <button type="button" id="resolve-btn" class="btn btn-primary">Mark Resolved</button>
+        {{/if}}
+      {{else}}
+        <a href="/users/login" class="btn btn-outline">Log in to bookmark or resolve</a>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script>
+  const bookmarkBtn = document.getElementById('bookmark-btn');
+  if (bookmarkBtn) {
+    bookmarkBtn.addEventListener('click', async () => {
+      const res = await fetch('/users/bookmark/{{complaintId}}', { method: 'DELETE' });
+      if (res.ok) window.location.reload();
+    });
+  }
+
+  const resolveBtn = document.getElementById('resolve-btn');
+  if (resolveBtn) {
+    resolveBtn.addEventListener('click', async () => {
+      const res = await fetch('/complaints/{{complaintId}}/resolve', { method: 'PUT' });
+      if (res.ok) window.location.reload();
+    });
+  }
+</script>

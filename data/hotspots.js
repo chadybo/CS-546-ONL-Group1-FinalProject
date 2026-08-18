@@ -51,3 +51,10 @@ export const getAllHotspots = async ({ borough } = {}) => {
 
   return results;
 };
+
+// Returns the hotspot doc for a single address, if one exists
+export const getHotspotByAddress = async (address) => {
+  if (!address) return null;
+  const hotspotCol = await hotspots();
+  return await hotspotCol.findOne({ address: address.trim() });
+};
