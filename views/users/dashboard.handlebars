@@ -21,6 +21,7 @@
           <th>Borough</th>
           <th>Date</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -33,9 +34,14 @@
             <td>
               {{#if (eq this.status 'open')}}
                 <span class="badge badge-open">Open</span>
-              {{else}}
+              {{else if (eq this.status 'resolved')}}
                 <span class="badge badge-resolved">Resolved</span>
+              {{else}}
+                <span class="badge badge-open">{{this.status}}</span>
               {{/if}}
+            </td>
+            <td>
+              <a href="/complaints/{{this._id}}" class="btn btn-outline btn-sm">View</a>
             </td>
           </tr>
         {{/each}}
@@ -62,6 +68,7 @@
           <th>Address</th>
           <th>Borough</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -73,9 +80,14 @@
             <td>
               {{#if (eq this.status 'open')}}
                 <span class="badge badge-open">Open</span>
-              {{else}}
+              {{else if (eq this.status 'resolved')}}
                 <span class="badge badge-resolved">Resolved</span>
+              {{else}}
+                <span class="badge badge-open">{{this.status}}</span>
               {{/if}}
+            </td>
+            <td>
+              <a href="/complaints/{{this._id}}" class="btn btn-outline btn-sm">View</a>
             </td>
           </tr>
         {{/each}}

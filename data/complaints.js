@@ -155,3 +155,46 @@ export const shuffleComplaints = async (array) => {
 
   return array;
 };
+
+// Fetches a single complaint by its id, checking both user complaints and the 311 cache
+export const getComplaintById = async (complaintId) => {
+  if (!complaintId) throw "Complaint ID is required";
+  if (!ObjectId.isValid(complaintId)) throw "Invalid complaint ID";
+
+  const col = await complaints();
+  const userComplaint = await col.findOne({ _id: new ObjectId(complaintId) });
+  if (userComplaint) return { ...userComplaint, source: "user" };
+
+  const nyc311Col = await nyc311cache();
+  const nyc311Complaint = await nyc311Col.findOne({
+    _id: new ObjectId(complaintId),
+  });
+  if (nyc311Complaint) return { ...nyc311Complaint, source: "311" };
+
+  throw "Complaint not found";
+};
+
+// Marks a complaint resolved (owner or admin only) and re-runs the hotspot upsert
+export const resolveComplaint = async (complaintId, userId, role) => {
+  if (!complaintId) throw "Complaint ID is required";
+  if (!ObjectId.isValid(complaintId)) throw "Invalid complaint ID";
+  if (!userId) throw "User ID is required";
+
+  const col = await complaints();
+  const complaint = await col.findOne({ _id: new ObjectId(complaintId) });
+  if (!complaint) throw "Complaint not found";
+
+  const isOwner = complaint.userId?.toString() === userId.toString();
+  const isAdmin = role === "admin";
+  if (!isOwner && !isAdmin) throw "Not authorized to resolve this complaint";
+
+  await col.updateOne(
+    { _id: new ObjectId(complaintId) },
+    { $set: { status: "resolved" } },
+  );
+
+  // Status changes don't affect the count, but keep the hotspot record fresh
+  await upsertHotspot(complaint.incidentAddress, complaint.borough);
+
+  return { _id: complaintId, status: "resolved" };
+};

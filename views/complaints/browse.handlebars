@@ -64,6 +64,7 @@
           <th>Date</th>
           <th>Source</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -88,6 +89,9 @@
               {{else}}
                 <span class="badge badge-open">{{this.status}}</span>
               {{/if}}
+            </td>
+            <td>
+              <a href="/complaints/{{this._id}}" class="btn btn-outline btn-sm">View</a>
             </td>
           </tr>
         {{/each}}
