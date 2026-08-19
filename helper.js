@@ -1,3 +1,5 @@
+import xss from "xss";
+
 const ADDRESS_TOKEN_ALIASES = new Map([
   ["avenue", "ave"],
   ["boulevard", "blvd"],
@@ -127,12 +129,40 @@ export const normalizeAddress = (address) => {
     .join(" ");
 };
 
+export const escapeRegex = (value) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const parseDateFilter = (value, label, endOfDay = false) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw `Invalid ${label} date`;
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw `Invalid ${label} date`;
+  }
+  if (endOfDay) date.setUTCHours(23, 59, 59, 999);
+  return date;
+};
+
+const PLAIN_TEXT_XSS_OPTIONS = Object.freeze({
+  whiteList: {},
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ["script", "style"],
+});
+
+// Removes markup from user-authored fields that are stored and displayed as text.
+export const sanitizePlainText = (value) => {
+  if (typeof value !== "string") return "";
+  return xss(value.normalize("NFKC"), PLAIN_TEXT_XSS_OPTIONS).trim();
+};
+
 export const geocodePin = async (address) => {
   const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(address)}.json?key=${process.env.MAPTILER_API_KEY}&limit=1`;
   const response = await fetch(url);
+  if (!response.ok) return;
   const data = await response.json();
 
-  if (!data) return;
+  if (!data?.features?.length) return;
 
   const lng = data.features[0].center[0];
   const lat = data.features[0].center[1];

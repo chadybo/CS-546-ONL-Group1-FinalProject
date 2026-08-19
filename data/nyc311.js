@@ -4,9 +4,14 @@ import {
   deriveComplaintCategory,
   normalizeAddress,
   resolveComplaintCategory,
+  escapeRegex,
+  COMPLAINT_CATEGORIES,
+  parseDateFilter,
 } from "../helper.js";
 
 const SODA_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json";
+const MAX_BROWSE_RESULTS = 1000;
+const BOROUGHS = ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"];
 
 // Fetches fresh noise complaints from NYC Open Data and upserts into the cache
 export const refreshCache = async () => {
@@ -62,9 +67,23 @@ export const getCached311 = async ({
   const col = await nyc311cache();
   const filter = {};
 
-  if (borough) filter.borough = borough.trim().toUpperCase();
+  for (const value of [borough, complaintType, from, to, search]) {
+    if (value !== undefined && typeof value !== "string") throw "Invalid filter";
+  }
+  if (search && search.trim().length > 100) throw "Search cannot exceed 100 characters";
+
+  const normalizedBorough = borough?.trim().toUpperCase();
+  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough)) throw "Invalid borough";
+  if (complaintType && !COMPLAINT_CATEGORIES.includes(complaintType.trim()))
+    throw "Invalid complaint type";
+  const parsedFrom = from ? parseDateFilter(from, "start") : null;
+  const parsedTo = to ? parseDateFilter(to, "end", true) : null;
+  if (parsedFrom && parsedTo && parsedFrom > parsedTo)
+    throw "The end date must be on or after the start date";
+
+  if (borough) filter.borough = normalizedBorough;
   if (search) {
-    const regex = { $regex: search.trim(), $options: "i" };
+    const regex = { $regex: escapeRegex(search.trim()), $options: "i" };
     filter.$or = [
       { incidentAddress: regex },
       { complaintType: regex },
@@ -76,14 +95,18 @@ export const getCached311 = async ({
   }
   if (from || to) {
     filter.createdDate = {};
-    if (from) filter.createdDate.$gte = new Date(from);
-    if (to) filter.createdDate.$lte = new Date(to);
+    if (parsedFrom) filter.createdDate.$gte = parsedFrom;
+    if (parsedTo) filter.createdDate.$lte = parsedTo;
   }
 
   // const limit = 20;
   // const skip = (page - 1) * limit;
 
-  const results = await col.find(filter).sort({ createdDate: -1 }).toArray();
+  const results = await col
+    .find(filter)
+    .sort({ createdDate: -1 })
+    .limit(MAX_BROWSE_RESULTS)
+    .toArray();
   const categorizedResults = results.map((record) => ({
     ...record,
     nycComplaintType: record.complaintType,
@@ -104,7 +127,10 @@ export const getCached311 = async ({
 // Returns complaint counts grouped by month for a given borough
 export const getComplaintTrends = async (borough) => {
   const col = await nyc311cache();
-  const match = borough ? { borough: borough.trim().toUpperCase() } : {};
+  if (borough !== undefined && typeof borough !== "string") throw "Invalid borough";
+  const normalizedBorough = borough?.trim().toUpperCase();
+  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough)) throw "Invalid borough";
+  const match = normalizedBorough ? { borough: normalizedBorough } : {};
 
   const trends = await col.aggregate([
     { $match: match },

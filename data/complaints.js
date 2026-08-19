@@ -1,7 +1,16 @@
 import { ObjectId } from "mongodb";
 import { complaints, users, nyc311cache } from "../config/mongoCollections.js";
 import { upsertHotspot } from "./hotspots.js";
-import { COMPLAINT_CATEGORIES, normalizeAddress } from "../helper.js";
+import {
+  COMPLAINT_CATEGORIES,
+  escapeRegex,
+  normalizeAddress,
+  parseDateFilter,
+  sanitizePlainText,
+} from "../helper.js";
+
+const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+const MAX_BROWSE_RESULTS = 1000;
 
 // Inserts a new user complaint and updates the hotspot layer
 export const submitComplaint = async (
@@ -13,8 +22,19 @@ export const submitComplaint = async (
 ) => {
   if (!userId || !address || !borough || !complaintType)
     throw "All required fields must be provided";
-  address = address.trim();
+  if (
+    typeof address !== "string" ||
+    typeof borough !== "string" ||
+    typeof complaintType !== "string" ||
+    (description !== undefined && typeof description !== "string")
+  ) throw "Complaint fields must be valid text";
+  if (!ObjectId.isValid(userId)) throw "Invalid user ID";
+  address = sanitizePlainText(address);
   borough = borough.trim();
+  description = sanitizePlainText(description || "");
+  if (address.length < 5 || address.length > 120 || !/\d/.test(address) || !/[a-z]/i.test(address))
+    throw "Enter a valid address with a street number and name";
+  if (!BOROUGHS.includes(borough)) throw "Invalid borough";
   if (!COMPLAINT_CATEGORIES.includes(complaintType))
     throw "Invalid complaint type";
   if (description && description.length > 500)
@@ -30,7 +50,7 @@ export const submitComplaint = async (
     borough: borough.toUpperCase(),
     complaintType,
     complaintCategory: complaintType,
-    resolutionDescription: description?.trim() || "",
+    resolutionDescription: description,
     status: "In Progress",
     createdDate: new Date(),
   };
@@ -61,13 +81,28 @@ export const getAllComplaints = async ({
   const complaintList = await complaints();
   const filter = {};
 
-  if (borough) filter.borough = borough.trim().toUpperCase();
+  for (const value of [borough, complaintType, from, to, search]) {
+    if (value !== undefined && typeof value !== "string") throw "Invalid filter";
+  }
+  if (search && search.trim().length > 100) throw "Search cannot exceed 100 characters";
+
+  const normalizedBorough = borough?.trim().toUpperCase();
+  if (normalizedBorough && !BOROUGHS.some((item) => item.toUpperCase() === normalizedBorough))
+    throw "Invalid borough";
+  if (complaintType && !COMPLAINT_CATEGORIES.includes(complaintType.trim()))
+    throw "Invalid complaint type";
+  const parsedFrom = from ? parseDateFilter(from, "start") : null;
+  const parsedTo = to ? parseDateFilter(to, "end", true) : null;
+  if (parsedFrom && parsedTo && parsedFrom > parsedTo)
+    throw "The end date must be on or after the start date";
+
+  if (borough) filter.borough = normalizedBorough;
 
   if (complaintType)
-    filter.complaintType = { $regex: complaintType, $options: "i" };
+    filter.complaintType = complaintType.trim();
 
   if (search) {
-    const regex = { $regex: search.trim(), $options: "i" };
+    const regex = { $regex: escapeRegex(search.trim()), $options: "i" };
     filter.$or = [
       { incidentAddress: regex },
       { complaintType: regex },
@@ -78,13 +113,14 @@ export const getAllComplaints = async ({
 
   if (from || to) {
     filter.createdDate = {};
-    if (from) filter.createdDate.$gte = new Date(from);
-    if (to) filter.createdDate.$lte = new Date(to);
+    if (parsedFrom) filter.createdDate.$gte = parsedFrom;
+    if (parsedTo) filter.createdDate.$lte = parsedTo;
   }
 
   const results = await complaintList
     .find(filter)
     .sort({ createdDate: -1 })
+    .limit(MAX_BROWSE_RESULTS)
     .toArray();
 
   return results;
@@ -145,15 +181,6 @@ export const sortDate = async (arr, bool) => {
   }
 
   return arr;
-};
-
-export const shuffleComplaints = async (array) => {
-  for (let x = 0; x < array.length; x++) {
-    let y = Math.floor(Math.random() * (x + 1));
-    [array[x], array[y]] = [array[y], array[x]];
-  }
-
-  return array;
 };
 
 // Fetches a single complaint by its id, checking both user complaints and the 311 cache

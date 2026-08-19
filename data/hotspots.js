@@ -1,5 +1,8 @@
 import { complaints, hotspots } from "../config/mongoCollections.js";
 
+const MAX_HOTSPOT_RESULTS = 1000;
+const BOROUGHS = ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"];
+
 // Recalculates complaint count for an address and upserts the hotspot record
 export const upsertHotspot = async (normalizedAddress, borough) => {
   const complaintCol = await complaints();
@@ -44,10 +47,17 @@ export const getAllHotspots = async ({ borough } = {}) => {
   const hotspotList = await hotspots();
   const filter = {};
 
-  if (borough) filter.borough = borough.trim().toUpperCase();
+  if (borough !== undefined && typeof borough !== "string") throw "Invalid borough";
+  const normalizedBorough = borough?.trim().toUpperCase();
+  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough)) throw "Invalid borough";
+  if (borough) filter.borough = normalizedBorough;
   filter.count = { $gt: 2 };
 
-  const results = await hotspotList.find(filter).sort({ count: -1 }).toArray();
+  const results = await hotspotList
+    .find(filter)
+    .sort({ count: -1 })
+    .limit(MAX_HOTSPOT_RESULTS)
+    .toArray();
 
   return results;
 };
