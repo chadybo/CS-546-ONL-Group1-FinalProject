@@ -1,44 +1,24 @@
 <div class="auth-wrap">
   <h1>Welcome back</h1>
-  <div id="login-error" class="alert alert-error" style="display:none"></div>
+  <div id="login-error" class="alert alert-error" role="alert" aria-live="assertive" hidden></div>
   <div class="card">
-    <form id="login-form">
+    <form id="login-form" method="POST" action="/users/login">
       <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" id="email" placeholder="your@email.com" required />
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" placeholder="your@email.com" maxlength="254" autocomplete="email" required />
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" id="password" placeholder="Your password" required />
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" placeholder="Your password" maxlength="72" autocomplete="current-password" required />
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%">Log in</button>
     </form>
   </div>
   <p class="auth-footer">No account? <a href="/users/register">Register</a></p>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script>
-  $('#login-form').on('submit', function(e) {
-    e.preventDefault();
-    $('#login-error').hide();
-    $.ajax({
-      url: '/users/login',
-      method: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify({
-        email: $('#email').val(),
-        password: $('#password').val()
-      }),
-      success: function() {
-        window.location.href = '/users/dashboard';
-      },
-      error: function(xhr) {
-        const msg = xhr.responseJSON && xhr.responseJSON.error
-          ? xhr.responseJSON.error
-          : 'Login failed. Please try again.';
-        $('#login-error').text(msg).show();
-      }
-    });
-  });
-</script>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"
+></script>
+<script src="/public/js/login.js"></script>

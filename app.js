@@ -4,9 +4,9 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import flash from "connect-flash";
 import dotenv from "dotenv";
-import xss from "xss";
 import configRoutes from "./routes/index.js";
 import { refreshCache } from "./data/nyc311.js";
+import { securityHeaders } from "./middleware/security.js";
 
 dotenv.config();
 
@@ -16,6 +16,9 @@ refreshCache()
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.disable("x-powered-by");
+app.use(securityHeaders);
 
 const hbs = create({
   defaultLayout: "main",
@@ -41,36 +44,31 @@ app.engine("handlebars", hbs.engine);
 app.set("view engine", "handlebars");
 app.set("views", "./views");
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Parse request bodies
+app.use(express.json({ limit: "50kb" }));
+app.use(express.urlencoded({ extended: false, limit: "50kb" }));
+
+// Serve static files
 app.use("/public", express.static("public"));
 
 app.use(
   session({
+    name: "streetNoise.sid",
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: `${process.env.MONGO_URI}${process.env.DB_NAME}`,
     }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 },
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24,
+    },
   }),
 );
 
 app.use(flash());
-
-// Sanitize all string inputs against XSS (skip passwords: they're hashed, not rendered)
-app.use((req, res, next) => {
-  if (req.body && typeof req.body === "object") {
-    for (const key in req.body) {
-      if (key === "password" || key === "confirmPassword") continue;
-      if (typeof req.body[key] === "string") {
-        req.body[key] = xss(req.body[key]);
-      }
-    }
-  }
-  next();
-});
 
 // Expose flash messages and the logged-in user to every view (nav login/logout state)
 app.use((req, res, next) => {
@@ -83,6 +81,15 @@ app.use((req, res, next) => {
 });
 
 configRoutes(app);
+
+app.use((error, req, res, next) => {
+  console.error(error);
+  if (res.headersSent) return next(error);
+  return res.status(500).render("error", {
+    title: "Server error",
+    message: "Something went wrong. Please try again.",
+  });
+});
 
 app.listen(port, () => {
   console.log(`Street Noise running on http://localhost:${port}`);

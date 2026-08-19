@@ -4,7 +4,6 @@ import {
   getAllComplaints,
   aggregateComplaintType,
   sortDate,
-  shuffleComplaints,
   resolveComplaint,
   getComplaintById,
 } from "../data/complaints.js";
@@ -13,12 +12,24 @@ import { getCached311, getComplaintTrends } from "../data/nyc311.js";
 import { getAddressHistory } from "../data/addressHistory.js";
 import { isBookmarked } from "../data/users.js";
 import { COMPLAINT_CATEGORIES, geocodePin } from "../helper.js";
+import { publicError } from "../middleware/security.js";
 
 const router = Router();
 
 const TYPES = COMPLAINT_CATEGORIES;
 
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+const PAGE_SIZE = 10;
+const MAX_BROWSE_ITEMS = 1000;
+const MAX_PAGE = MAX_BROWSE_ITEMS / PAGE_SIZE;
+
+const parsePage = (value) => {
+  if (value === undefined) return 1;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) throw "Invalid page number";
+  const page = Number.parseInt(value, 10);
+  if (page < 1 || page > MAX_PAGE) throw `Page must be between 1 and ${MAX_PAGE}`;
+  return page;
+};
 
 // Show submit complaint form — login required
 router.get("/submit", (req, res) => {
@@ -46,7 +57,7 @@ router.post("/submit", async (req, res) => {
   } catch (e) {
     return res.status(400).render("complaints/submit", {
       title: "Submit a Complaint",
-      error: e,
+      error: publicError(e),
       types: TYPES,
       boroughs: BOROUGHS,
     });
@@ -56,28 +67,25 @@ router.post("/submit", async (req, res) => {
 router.route("/browse").get(async (req, res) => {
   try {
     const { borough, complaintType, from, to, search, sort } = req.query;
+    const page = parsePage(req.query.page);
+    if (sort && sort !== "Newest" && sort !== "Oldest") throw "Invalid sort option";
+    const sortOrder = sort || "Newest";
 
     const filters = { borough, complaintType, from, to, search };
 
     const complaintList = await getAllComplaints(filters);
     const nyc311List = await getCached311(filters);
 
-    let combinedList = complaintList.concat(nyc311List);
+    let combinedList = complaintList
+      .map((complaint) => ({ ...complaint, source: "user" }))
+      .concat(nyc311List.map((complaint) => ({ ...complaint, source: "311" })));
 
-    await shuffleComplaints(combinedList);
+    await sortDate(combinedList, sortOrder === "Newest" ? 1 : 0);
+    combinedList = combinedList.slice(0, MAX_BROWSE_ITEMS);
 
-    if (sort) {
-      if (sort === "Newest") {
-        await sortDate(combinedList, 1);
-      } else if (sort === "Oldest") {
-        await sortDate(combinedList, 0);
-      }
-    }
-
-    const page = parseInt(req.query.page, 10) || 1;
-    const totPages = Math.ceil(combinedList.length / 10);
-    const startIndex = (page - 1) * 10;
-    const paginatedList = combinedList.slice(startIndex, startIndex + 10);
+    const totPages = Math.ceil(combinedList.length / PAGE_SIZE);
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const paginatedList = combinedList.slice(startIndex, startIndex + PAGE_SIZE);
 
     let queryString = [];
     if (borough) {
@@ -125,29 +133,31 @@ router.route("/browse").get(async (req, res) => {
       isVehicleIdling: complaintType === "Vehicle Idling",
       isLoudTalking: complaintType === "Loud Talking",
       isOther: complaintType === "Other",
-      isNewest: sort === "Newest",
-      isOldest: sort === "Oldest",
+      isNewest: sortOrder === "Newest",
+      isOldest: sortOrder === "Oldest",
       from,
       to,
       search,
       queryString,
     });
   } catch (e) {
-    res.status(500).send(e);
+    return res.status(typeof e === "string" ? 400 : 500).render("error", {
+      message: typeof e === "string" ? e : "Complaints are temporarily unavailable.",
+    });
   }
 });
 
 router.route("/hotspots").get(async (req, res) => {
   try {
     const { borough } = req.query;
+    const page = parsePage(req.query.page);
     const filters = { borough };
 
     const hotspotList = await getAllHotspots(filters);
 
-    const page = parseInt(req.query.page, 10) || 1;
-    const totPages = Math.ceil(hotspotList.length / 10);
-    const startIndex = (page - 1) * 10;
-    const paginatedList = hotspotList.slice(startIndex, startIndex + 10);
+    const totPages = Math.ceil(hotspotList.length / PAGE_SIZE);
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const paginatedList = hotspotList.slice(startIndex, startIndex + PAGE_SIZE);
 
     let queryString = [];
     if (borough) {
@@ -186,7 +196,9 @@ router.route("/hotspots").get(async (req, res) => {
       queryString,
     });
   } catch (e) {
-    return res.status(500).send(e);
+    return res.status(typeof e === "string" ? 400 : 500).render("error", {
+      message: typeof e === "string" ? e : "Hotspots are temporarily unavailable.",
+    });
   }
 });
 
@@ -274,17 +286,17 @@ router.get("/trends", async (req, res) => {
       isStatenIsland: borough === "Staten Island",
     });
   } catch (e) {
-    return res.status(500).render("error", { message: e });
+    return res.status(500).render("error", { message: publicError(e, "Complaint trends are temporarily unavailable") });
   }
 });
 
 router.get("/common", async (req, res) => {
   try {
+    const page = parsePage(req.query.page);
     const data_aggr = await aggregateComplaintType();
-    const page = parseInt(req.query.page, 10) || 1;
-    const totPages = Math.ceil(data_aggr.length / 10);
-    const startIndex = (page - 1) * 10;
-    const paginatedList = data_aggr.slice(startIndex, startIndex + 10);
+    const totPages = Math.ceil(data_aggr.length / PAGE_SIZE);
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const paginatedList = data_aggr.slice(startIndex, startIndex + PAGE_SIZE);
 
     res.render("complaints/common", {
       data: paginatedList,
@@ -296,7 +308,9 @@ router.get("/common", async (req, res) => {
       nextPage: page + 1,
     });
   } catch (e) {
-    return res.status(500).render("error", { message: e });
+    return res.status(typeof e === "string" ? 400 : 500).render("error", {
+      message: publicError(e, "Complaint statistics are temporarily unavailable"),
+    });
   }
 });
 
@@ -331,7 +345,9 @@ router.get("/:id", async (req, res) => {
       canResolve,
     });
   } catch (e) {
-    return res.status(404).render("error", { message: e });
+    return res.status(typeof e === "string" ? 404 : 500).render("error", {
+      message: publicError(e, "Complaint details are temporarily unavailable"),
+    });
   }
 });
 
@@ -347,7 +363,7 @@ router.put("/:id/resolve", async (req, res) => {
     );
     return res.status(200).json(updated);
   } catch (e) {
-    return res.status(400).json({ error: e.toString() });
+    return res.status(400).json({ error: publicError(e) });
   }
 });
 

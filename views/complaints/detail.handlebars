@@ -1,4 +1,4 @@
-<div style="max-width:600px;margin:0 auto">
+<div style="max-width:600px;margin:0 auto" data-complaint-id="{{complaintId}}">
   <div class="page-header">
     <h1>{{complaint.complaintType}}</h1>
     <p>{{complaint.incidentAddress}}, {{complaint.borough}}</p>
@@ -67,23 +67,8 @@
         <a href="/users/login" class="btn btn-outline">Log in to bookmark or resolve</a>
       {{/if}}
     </div>
+    <div id="action-feedback" class="alert alert-error" role="alert" aria-live="assertive" hidden></div>
   </div>
 </div>
 
-<script>
-  const bookmarkBtn = document.getElementById('bookmark-btn');
-  if (bookmarkBtn) {
-    bookmarkBtn.addEventListener('click', async () => {
-      const res = await fetch('/users/bookmark/{{complaintId}}', { method: 'DELETE' });
-      if (res.ok) window.location.reload();
-    });
-  }
-
-  const resolveBtn = document.getElementById('resolve-btn');
-  if (resolveBtn) {
-    resolveBtn.addEventListener('click', async () => {
-      const res = await fetch('/complaints/{{complaintId}}/resolve', { method: 'PUT' });
-      if (res.ok) window.location.reload();
-    });
-  }
-</script>
+<script type="module" src="/public/js/complaint-actions.js"></script>

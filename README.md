@@ -73,7 +73,7 @@ Create a file called `.env` in the project root with the following:
 ```
 MONGO_URI=mongodb://localhost:27017/
 DB_NAME=street_noise
-SESSION_SECRET=street-noise-secret-key
+SESSION_SECRET=replace-with-a-random-secret
 PORT=3000
 ```
 

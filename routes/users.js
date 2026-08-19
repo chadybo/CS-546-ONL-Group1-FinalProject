@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { registerUser, loginUser, getUserDashboard, addBookmark, removeBookmark } from '../data/users.js';
+import { authRateLimit, publicError, regenerateSession } from '../middleware/security.js';
 
 const router = Router();
 
@@ -10,30 +11,32 @@ router.get('/register', (req, res) => {
 });
 
 // Handle register form submission
-router.post('/register', async (req, res) => {
+router.post('/register', authRateLimit, async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const user = await registerUser(username, email, password);
+    await regenerateSession(req);
     req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.role = 'user';
     return res.redirect('/users/dashboard');
   } catch (e) {
-    return res.status(400).render('users/register', { title: 'Register', error: e });
+    return res.status(400).render('users/register', { title: 'Register', error: publicError(e) });
   }
 });
 
 // Handle login form submission
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimit, async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await loginUser(email, password);
+    await regenerateSession(req);
     req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.role = user.role;
     return res.status(200).json({ success: true });
   } catch (e) {
-    return res.status(400).json({ error: typeof e === 'string' ? e : 'Invalid email or password' });
+    return res.status(400).json({ error: publicError(e, 'Invalid email or password') });
   }
 });
 
@@ -44,10 +47,13 @@ router.get('/login', (req, res) => {
 });
 
 
-// Destroy session and redirect home
-router.get('/logout', (req, res) => {
-  req.session.destroy();
-  return res.redirect('/');
+// Destroy session via POST so another site cannot log the user out.
+router.post('/logout', (req, res, next) => {
+  req.session.destroy((error) => {
+    if (error) return next(error);
+    res.clearCookie('streetNoise.sid');
+    return res.redirect('/');
+  });
 });
 
 
@@ -56,9 +62,9 @@ router.post('/bookmark/:id', async (req, res) => {
   if (!req.session.userId) return res.redirect('/users/login');
   try {
     await addBookmark(req.session.userId, req.params.id);
-    return res.redirect(req.get('Referrer') || '/users/dashboard');
+    return res.redirect('/users/dashboard');
   } catch (e) {
-    return res.status(400).render('error', { message: e });
+    return res.status(400).render('error', { message: publicError(e) });
   }
 });
 
@@ -69,7 +75,7 @@ router.delete('/bookmark/:id', async (req, res) => {
     await removeBookmark(req.session.userId, req.params.id);
     return res.status(200).json({ success: true });
   } catch (e) {
-    return res.status(400).json({ error: e.toString() });
+    return res.status(400).json({ error: publicError(e) });
   }
 });
 
@@ -85,7 +91,7 @@ router.get('/dashboard', async (req, res) => {
       bookmarks
     });
   } catch (e) {
-    return res.status(500).render('error', { message: e });
+    return res.status(500).render('error', { message: publicError(e, 'Dashboard data is temporarily unavailable') });
   }
 });
 
