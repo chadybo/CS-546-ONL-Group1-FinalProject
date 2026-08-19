@@ -42,6 +42,8 @@ test("login password length validation supports existing accounts safely", () =>
 test("complaint field validation enforces useful limits", () => {
   assert.equal(validateAddress("251 W 30th St"), "");
   assert.match(validateAddress("Broadway"), /street number/);
+  assert.equal(validateAddress(`1 ${"A".repeat(118)}`), "");
+  assert.equal(validateAddress(`1 ${"A".repeat(118)}`), "");
   assert.match(validateAddress(`1 ${"A".repeat(119)}`), /5–120/);
   assert.match(validateDescription("x".repeat(501)), /500/);
 });
