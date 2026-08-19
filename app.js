@@ -19,9 +19,8 @@ const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
 
 app.disable("x-powered-by");
-// Production traffic reaches the app through exactly one TLS-terminating proxy.
-// Keeping this at one lets Express honor that proxy's forwarded protocol without
-// trusting an arbitrary chain of forwarding headers.
+// In production, one reverse proxy handles HTTPS before requests reach Express.
+// Trusting that proxy lets Express recognize HTTPS and send secure cookies.
 if (isProduction) app.set("trust proxy", 1);
 app.use(securityHeaders);
 
