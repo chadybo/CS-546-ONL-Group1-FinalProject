@@ -4,20 +4,28 @@
     <div class="alert alert-error">{{error}}</div>
   {{/if}}
   <div class="card">
-    <form method="POST" action="/users/register">
+    <form method="POST" action="/users/register" data-validate-form novalidate>
+      <div class="alert alert-error form-error-summary" role="alert" aria-live="assertive" hidden></div>
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="username" placeholder="Choose a username" required />
+        <label for="username">Username</label>
+        <input id="username" type="text" name="username" placeholder="Choose a username" minlength="3" maxlength="20" autocomplete="username" data-validate="username" aria-describedby="username-error" required />
+        <span id="username-error" class="field-error" aria-live="polite"></span>
       </div>
       <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" placeholder="your@email.com" required />
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="your@email.com" maxlength="254" autocomplete="email" inputmode="email" data-validate="email" aria-describedby="email-error" required />
+        <span id="email-error" class="field-error" aria-live="polite"></span>
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" placeholder="At least 8 characters" required />
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" type="password" name="password" placeholder="At least 8 characters" minlength="8" maxlength="72" autocomplete="new-password" data-validate="password" aria-describedby="password-help password-error" required />
+          <button type="button" class="password-toggle" data-password-toggle="password" aria-pressed="false">Show</button>
+        </div>
+        <span id="password-help" class="field-help">Use upper- and lowercase letters plus a number.</span>
+        <span id="password-error" class="field-error" aria-live="polite"></span>
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Create account</button>
+      <button type="submit" class="btn btn-primary" style="width:100%" data-submitting-text="Creating account…">Create account</button>
     </form>
   </div>
   <p class="auth-footer">Already have an account? <a href="/users/login">Log in</a></p>

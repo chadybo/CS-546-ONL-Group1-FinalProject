@@ -380,6 +380,82 @@ tbody tr:hover {
   outline: none;
 }
 
+.form-group .is-invalid {
+  border-color: var(--red);
+}
+
+.form-group .is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(232, 64, 42, 0.12);
+}
+
+.field-error,
+.field-help,
+.char-count {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.field-error {
+  min-height: 17px;
+  color: var(--red-hover);
+}
+
+.form-error-summary[hidden] {
+  display: none;
+}
+
+.form-error-summary {
+  margin-bottom: 18px;
+}
+
+.filter-error-summary {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+
+.address-search-form .form-error-summary {
+  grid-column: 1 / -1;
+}
+
+.field-help,
+.char-count {
+  color: var(--gray-700);
+}
+
+.char-count {
+  text-align: right;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 64px;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--navy-light);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
@@ -489,6 +565,18 @@ tbody tr:hover {
 .filter-bar select:focus,
 .filter-bar input:focus {
   border-color: var(--navy);
+}
+
+.filter-date-field {
+  position: relative;
+  margin-bottom: 0;
+}
+
+.filter-date-field .field-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  white-space: nowrap;
 }
 
 /* ================================

@@ -4,7 +4,8 @@
 </div>
 
 <div class="filter-bar">
-  <form method="GET" action="/complaints/browse" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;width:100%">
+  <form method="GET" action="/complaints/browse" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;width:100%" data-validate-form novalidate>
+    <div class="alert alert-error form-error-summary filter-error-summary" role="alert" aria-live="assertive" hidden></div>
     <div>
       <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Borough</label>
       <select name="borough">
@@ -31,22 +32,23 @@
     <div>
       <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Sort</label>
       <select name="sort">
-        <option value="">Default</option>
         <option value="Newest" {{#if isNewest}}selected{{/if}}>Newest</option>
         <option value="Oldest" {{#if isOldest}}selected{{/if}}>Oldest</option>
       </select>
     </div>
-    <div>
-      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
-      <input type="date" name="from" value="{{from}}" />
+    <div class="form-group filter-date-field">
+      <label for="filter-from" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
+      <input id="filter-from" type="date" name="from" value="{{from}}" data-validate data-date-start aria-describedby="filter-from-error" />
+      <span id="filter-from-error" class="field-error" aria-live="polite"></span>
     </div>
-    <div>
-      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">To</label>
-      <input type="date" name="to" value="{{to}}" />
+    <div class="form-group filter-date-field">
+      <label for="filter-to" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">To</label>
+      <input id="filter-to" type="date" name="to" value="{{to}}" data-validate data-date-end aria-describedby="filter-to-error" />
+      <span id="filter-to-error" class="field-error" aria-live="polite"></span>
     </div>
     <div>
       <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Search</label>
-      <input type="text" name="search" value="{{search}}" placeholder="Address, type, keyword..." style="min-width:200px" />
+      <input type="text" name="search" value="{{search}}" maxlength="100" data-validate placeholder="Address, type, keyword..." style="min-width:200px" />
     </div>
     <input type="hidden" name="page" value="1" />
     <button type="submit" class="btn btn-primary">Filter</button>

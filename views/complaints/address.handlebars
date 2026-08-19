@@ -4,7 +4,8 @@
 </div>
 
 <div class="address-search-card">
-  <form method="GET" action="/complaints/address" class="address-search-form">
+  <form method="GET" action="/complaints/address" class="address-search-form" data-validate-form novalidate>
+    <div class="alert alert-error form-error-summary" role="alert" aria-live="assertive" hidden></div>
     <div class="form-group">
       <label for="address-query">Street address</label>
       <input
@@ -14,8 +15,11 @@
         value="{{query}}"
         placeholder="e.g. 251 W 30th St"
         maxlength="150"
+        data-validate
+        aria-describedby="address-query-error"
         required
       />
+      <span id="address-query-error" class="field-error" aria-live="polite"></span>
     </div>
     <div class="form-group">
       <label for="address-borough">Borough</label>
