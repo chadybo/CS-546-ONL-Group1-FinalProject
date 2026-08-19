@@ -1,6 +1,27 @@
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_AUTH_ATTEMPTS = 10;
+const CLEANUP_INTERVAL_MS = 60 * 1000;
 const authAttempts = new Map();
+
+export const cleanupExpiredAuthAttempts = (
+  now = Date.now(),
+  attempts = authAttempts,
+) => {
+  let removed = 0;
+  for (const [key, entry] of attempts) {
+    if (entry.resetAt <= now) {
+      attempts.delete(key);
+      removed += 1;
+    }
+  }
+  return removed;
+};
+
+const authCleanupTimer = setInterval(
+  cleanupExpiredAuthAttempts,
+  CLEANUP_INTERVAL_MS,
+);
+authCleanupTimer.unref?.();
 
 export const publicError = (error, fallback = "The request could not be completed") =>
   typeof error === "string" ? error : fallback;

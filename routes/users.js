@@ -14,14 +14,17 @@ router.get('/register', (req, res) => {
 router.post('/register', authRateLimit, async (req, res) => {
   const { username, email, password } = req.body;
   try {
-    const user = await registerUser(username, email, password);
     await regenerateSession(req);
+    const user = await registerUser(username, email, password);
     req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.role = 'user';
     return res.redirect('/users/dashboard');
   } catch (e) {
-    return res.status(400).render('users/register', { title: 'Register', error: publicError(e) });
+    return res.status(typeof e === 'string' ? 400 : 500).render('users/register', {
+      title: 'Register',
+      error: publicError(e)
+    });
   }
 });
 

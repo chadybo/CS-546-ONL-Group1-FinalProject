@@ -286,7 +286,9 @@ router.get("/trends", async (req, res) => {
       isStatenIsland: borough === "Staten Island",
     });
   } catch (e) {
-    return res.status(500).render("error", { message: publicError(e, "Complaint trends are temporarily unavailable") });
+    return res.status(typeof e === "string" ? 400 : 500).render("error", {
+      message: publicError(e, "Complaint trends are temporarily unavailable"),
+    });
   }
 });
 
@@ -363,7 +365,9 @@ router.put("/:id/resolve", async (req, res) => {
     );
     return res.status(200).json(updated);
   } catch (e) {
-    return res.status(400).json({ error: publicError(e) });
+    return res.status(typeof e === "string" ? 400 : 500).json({
+      error: publicError(e),
+    });
   }
 });
 

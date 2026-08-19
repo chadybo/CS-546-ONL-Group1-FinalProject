@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { authRateLimit, securityHeaders } from "../middleware/security.js";
+import {
+  authRateLimit,
+  cleanupExpiredAuthAttempts,
+  securityHeaders,
+} from "../middleware/security.js";
 import { escapeRegex, sanitizePlainText } from "../helper.js";
 
 const createResponse = () => ({
@@ -46,6 +50,17 @@ test("authentication rate limiting returns JSON to AJAX clients", () => {
   }
   assert.equal(response.statusCode, 429);
   assert.match(response.jsonBody.error, /wait 15 minutes/);
+});
+
+test("authentication rate-limit cleanup removes only expired entries", () => {
+  const attempts = new Map([
+    ["expired", { count: 3, resetAt: 999 }],
+    ["active", { count: 2, resetAt: 1001 }],
+  ]);
+
+  assert.equal(cleanupExpiredAuthAttempts(1000, attempts), 1);
+  assert.equal(attempts.has("expired"), false);
+  assert.equal(attempts.has("active"), true);
 });
 
 test("escapeRegex makes search input literal", () => {

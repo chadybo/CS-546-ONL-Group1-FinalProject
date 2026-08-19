@@ -16,8 +16,13 @@ refreshCache()
 
 const app = express();
 const port = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === "production";
 
 app.disable("x-powered-by");
+// Production traffic reaches the app through exactly one TLS-terminating proxy.
+// Keeping this at one lets Express honor that proxy's forwarded protocol without
+// trusting an arbitrary chain of forwarding headers.
+if (isProduction) app.set("trust proxy", 1);
 app.use(securityHeaders);
 
 const hbs = create({
@@ -63,6 +68,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
+      secure: isProduction,
       maxAge: 1000 * 60 * 60 * 24,
     },
   }),

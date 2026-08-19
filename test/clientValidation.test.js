@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   normalizeText,
   validateAddress,
@@ -41,6 +42,7 @@ test("login password length validation supports existing accounts safely", () =>
 test("complaint field validation enforces useful limits", () => {
   assert.equal(validateAddress("251 W 30th St"), "");
   assert.match(validateAddress("Broadway"), /street number/);
+  assert.match(validateAddress(`1 ${"A".repeat(119)}`), /5–120/);
   assert.match(validateDescription("x".repeat(501)), /500/);
 });
 
@@ -48,4 +50,13 @@ test("date range validation rejects an end date before the start date", () => {
   assert.equal(validateDateRange("2026-01-01", "2026-01-31"), "");
   assert.equal(validateDateRange("", "2026-01-31"), "");
   assert.match(validateDateRange("2026-02-01", "2026-01-31"), /end date/);
+});
+
+test("address history wires the address validator and matching length limit", async () => {
+  const template = await readFile(
+    new URL("../views/complaints/address.handlebars", import.meta.url),
+    "utf8",
+  );
+  assert.match(template, /maxlength="120"/);
+  assert.match(template, /data-validate="address"/);
 });
