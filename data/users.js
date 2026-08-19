@@ -5,15 +5,25 @@ import { complaints as complaintsCollection } from '../config/mongoCollections.j
 import { nyc311cache as nyc311Collection } from '../config/mongoCollections.js';
 
 const SALT_ROUNDS = 12;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const USERNAME_PATTERN = /^[a-z0-9_-]+$/;
 
 // Creates a new user account with a hashed password
 export const registerUser = async (username, email, password) => {
   if (!username || !email || !password) throw 'All fields are required';
-  username = username.trim().toLowerCase();
-  email = email.trim().toLowerCase();
+  if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+    throw 'All fields must be valid text';
+  }
+  username = username.normalize('NFKC').trim().toLowerCase();
+  email = email.normalize('NFKC').trim().toLowerCase();
   if (username.length < 3 || username.length > 20) throw 'Username must be 3-20 characters';
-  if (!email.includes('@')) throw 'Invalid email address';
+  if (!USERNAME_PATTERN.test(username)) throw 'Username may only contain letters, numbers, hyphens, and underscores';
+  if (email.length > 254 || !EMAIL_PATTERN.test(email)) throw 'Invalid email address';
   if (password.length < 8) throw 'Password must be at least 8 characters';
+  if (Buffer.byteLength(password, 'utf8') > 72) throw 'Password cannot exceed 72 UTF-8 bytes';
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    throw 'Password must include uppercase and lowercase letters and a number';
+  }
 
   const col = await users();
 
@@ -40,7 +50,11 @@ export const registerUser = async (username, email, password) => {
 // Verifies credentials and returns the user if valid
 export const loginUser = async (email, password) => {
   if (!email || !password) throw 'Email and password are required';
-  email = email.trim().toLowerCase();
+  if (typeof email !== 'string' || typeof password !== 'string' || password.length > 72) {
+    throw 'Invalid email or password';
+  }
+  email = email.normalize('NFKC').trim().toLowerCase();
+  if (email.length > 254 || !EMAIL_PATTERN.test(email)) throw 'Invalid email or password';
 
   const col = await users();
   const user = await col.findOne({ email });
@@ -56,6 +70,7 @@ export const loginUser = async (email, password) => {
 // Gets all complaints submitted by a user and their bookmarked complaints
 export const getUserDashboard = async (userId) => {
   if (!userId) throw 'User ID is required';
+  if (!ObjectId.isValid(userId)) throw 'Invalid user ID';
 
   const userCol = await users();
   const complaintCol = await complaintsCollection();
@@ -127,6 +142,7 @@ export const getAdminStats = async () => {
 // Deletes a complaint and re-runs hotspot upsert
 export const deleteComplaint = async (complaintId) => {
   if (!complaintId) throw 'Complaint ID is required';
+  if (!ObjectId.isValid(complaintId)) throw 'Invalid complaint ID';
   const col = await complaintsCollection();
   const complaint = await col.findOne({ _id: new ObjectId(complaintId) });
   if (!complaint) throw 'Complaint not found';

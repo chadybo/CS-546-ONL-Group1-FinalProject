@@ -9,36 +9,42 @@
   {{/if}}
 
   <div class="card">
-    <form method="POST" action="/complaints/submit">
+    <form method="POST" action="/complaints/submit" data-validate-form novalidate>
+      <div class="alert alert-error form-error-summary" role="alert" aria-live="assertive" hidden></div>
       <div class="form-group">
-        <label>Address</label>
-        <input type="text" name="address" placeholder="e.g. 251 W 30th St, Manhattan" required />
+        <label for="address">Address</label>
+        <input id="address" type="text" name="address" placeholder="e.g. 251 W 30th St" minlength="5" maxlength="120" autocomplete="street-address" data-validate="address" aria-describedby="address-error" required />
+        <span id="address-error" class="field-error" aria-live="polite"></span>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Borough</label>
-          <select name="borough" required>
+          <label for="borough">Borough</label>
+          <select id="borough" name="borough" data-validate aria-describedby="borough-error" required>
             <option value="">Select a borough</option>
             {{#each boroughs}}
               <option value="{{this}}">{{this}}</option>
             {{/each}}
           </select>
+          <span id="borough-error" class="field-error" aria-live="polite"></span>
         </div>
         <div class="form-group">
-          <label>Complaint Type</label>
-          <select name="complaintType" required>
+          <label for="complaintType">Complaint Type</label>
+          <select id="complaintType" name="complaintType" data-validate aria-describedby="type-error" required>
             <option value="">Select a type</option>
             {{#each types}}
               <option value="{{this}}">{{this}}</option>
             {{/each}}
           </select>
+          <span id="type-error" class="field-error" aria-live="polite"></span>
         </div>
       </div>
       <div class="form-group">
-        <label>Description <span style="color:#adb5bd;font-weight:400">(optional)</span></label>
-        <textarea name="description" maxlength="500" placeholder="Describe the issue in more detail..."></textarea>
+        <label for="description">Description <span style="color:#adb5bd;font-weight:400">(optional)</span></label>
+        <textarea id="description" name="description" maxlength="500" data-validate="description" aria-describedby="description-count description-error" placeholder="Describe the issue in more detail..."></textarea>
+        <span id="description-count" class="char-count" aria-live="polite"></span>
+        <span id="description-error" class="field-error" aria-live="polite"></span>
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Submit Complaint</button>
+      <button type="submit" class="btn btn-primary" style="width:100%" data-submitting-text="Submitting…">Submit Complaint</button>
     </form>
   </div>
 </div>

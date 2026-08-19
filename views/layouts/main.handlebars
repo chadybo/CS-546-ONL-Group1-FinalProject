@@ -33,7 +33,9 @@
           </div>
           {{#if user}}
             <a href="/users/dashboard" class="nav-link">Dashboard</a>
-            <a href="/users/logout" class="nav-link">Logout</a>
+            <form method="POST" action="/users/logout" class="nav-logout-form">
+              <button type="submit" class="nav-link nav-link-button">Logout</button>
+            </form>
           {{else}}
             <a href="/users/login" class="nav-link">Login</a>
             <a href="/users/register" class="nav-btn">Register</a>
@@ -52,5 +54,6 @@
         <span>Data from NYC Open Data 311</span>
       </div>
     </footer>
+    <script type="module" src="/public/js/client-validation.js"></script>
   </body>
 </html>

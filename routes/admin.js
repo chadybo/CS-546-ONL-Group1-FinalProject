@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getAdminStats, deleteComplaint } from '../data/users.js';
+import { publicError } from '../middleware/security.js';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get('/', requireAdmin, async (req, res) => {
       ...stats
     });
   } catch (e) {
-    return res.status(500).render('error', { message: e });
+    return res.status(500).render('error', { message: publicError(e, 'Admin data is temporarily unavailable') });
   }
 });
 
@@ -29,7 +30,7 @@ router.post('/complaints/:id/delete', requireAdmin, async (req, res) => {
     await deleteComplaint(req.params.id);
     return res.redirect('/admin');
   } catch (e) {
-    return res.status(500).render('error', { message: e });
+    return res.status(typeof e === 'string' ? 400 : 500).render('error', { message: publicError(e) });
   }
 });
 

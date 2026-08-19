@@ -68,14 +68,23 @@ npm install
 
 ### 5. Create a .env file
 
-Create a file called `.env` in the project root with the following:
+Generate a random session secret with Node.js:
 
+```bash
+node --input-type=module -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(48).toString('base64'))"
 ```
+
+Create a file called `.env` in the project root and paste the generated value
+after `SESSION_SECRET=`:
+
+```env
 MONGO_URI=mongodb://localhost:27017/
 DB_NAME=street_noise
-SESSION_SECRET=street-noise-secret-key
+SESSION_SECRET=paste-the-generated-value-here
 PORT=3000
 ```
+
+Use a different secret for each environment, and do not commit the `.env` file.
 
 ### 6. Seed the database
 
