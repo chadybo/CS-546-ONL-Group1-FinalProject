@@ -209,18 +209,6 @@ export const sortDate = async (arr, bool) => {
   return arr;
 };
 
-export const findOpenOrResolved = async (arr, status) => {
-  if (status === "open") {
-    return arr.filter((x) => {
-      return x.status === "open";
-    });
-  } else if (status === "resolved") {
-    return arr.filter((x) => {
-      return x.status === "resolved";
-    });
-  }
-};
-
 // Fetches a single complaint by its id, checking both user complaints and the 311 cache
 export const getComplaintById = async (complaintId) => {
   if (!complaintId) throw "Complaint ID is required";

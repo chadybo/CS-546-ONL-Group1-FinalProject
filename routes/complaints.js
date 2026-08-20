@@ -4,7 +4,6 @@ import {
   getAllComplaints,
   aggregateComplaintType,
   sortDate,
-  findOpenOrResolved,
   resolveComplaint,
   getComplaintById,
 } from "../data/complaints.js";
