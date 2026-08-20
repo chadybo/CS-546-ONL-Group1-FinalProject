@@ -194,7 +194,7 @@ export const sortDate = async (arr, bool) => {
 };
 
 export const findOpenOrResolved = async (arr, status) => {
-  if (status === "Open") {
+  if (status === "In Progress") {
     return arr.filter((x) => {
       return x.status === "In Progress";
     });
