@@ -76,10 +76,7 @@ router.route("/browse").get(async (req, res) => {
       throw "Invalid sort option";
     const sortOrder = sort || "Newest";
 
-    if (status && status !== "In Progress" && status !== "Closed")
-      throw "Invalid status option";
-
-    const filters = { borough, complaintType, from, to, search };
+    const filters = { borough, complaintType, from, to, search, status };
 
     const complaintList = await getAllComplaints(filters);
     const nyc311List = await getCached311(filters);
@@ -90,12 +87,6 @@ router.route("/browse").get(async (req, res) => {
 
     await sortDate(combinedList, sortOrder === "Newest" ? 1 : 0);
     combinedList = combinedList.slice(0, MAX_BROWSE_ITEMS);
-
-    if (status) {
-      combinedList = await findOpenOrResolved(combinedList, status);
-    } else {
-      combinedList = await findOpenOrResolved(combinedList, "In Progress");
-    }
 
     const totPages = Math.ceil(combinedList.length / PAGE_SIZE);
     const startIndex = (page - 1) * PAGE_SIZE;
@@ -155,8 +146,8 @@ router.route("/browse").get(async (req, res) => {
       isOther: complaintType === "Other",
       isNewest: sortOrder === "Newest",
       isOldest: sortOrder === "Oldest",
-      isOpen: status === "In Progress",
-      isClosed: status === "Closed",
+      isOpen: status === "open",
+      isClosed: status === "resolved",
       from,
       to,
       search,

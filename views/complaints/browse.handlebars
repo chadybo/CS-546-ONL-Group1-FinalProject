@@ -37,10 +37,10 @@
       </select>
     </div>
     <div>
-      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Status</label>
-      <select name="status">
-        <option value="In Progress" {{#if isOpen}}selected{{/if}}>In Progress</option>
-        <option value="Closed" {{#if isClosed}}selected{{/if}}>Closed</option>
+      <label for="filter-status" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Status</label>
+      <select id="filter-status" name="status">
+        <option value="open" {{#if isOpen}}selected{{/if}}>Open</option>
+        <option value="resolved" {{#if isClosed}}selected{{/if}}>Resolved</option>
       </select>
     </div>
     <div class="form-group filter-date-field">

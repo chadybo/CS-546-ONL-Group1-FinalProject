@@ -57,7 +57,7 @@ export const submitComplaint = async (
     complaintType,
     complaintCategory: complaintType,
     resolutionDescription: description,
-    status: "In Progress",
+    status: "open",
     createdDate: new Date(),
   };
 
@@ -83,11 +83,12 @@ export const getAllComplaints = async ({
   from,
   to,
   search,
+  status,
 } = {}) => {
   const complaintList = await complaints();
   const filter = {};
 
-  for (const value of [borough, complaintType, from, to, search]) {
+  for (const value of [borough, complaintType, from, to, search, status]) {
     if (value !== undefined && typeof value !== "string")
       throw "Invalid filter";
   }
@@ -107,6 +108,9 @@ export const getAllComplaints = async ({
   if (parsedFrom && parsedTo && parsedFrom > parsedTo)
     throw "The end date must be on or after the start date";
 
+  if (status && status !== "open" && status !== "resolved")
+    throw "Invalid status option";
+
   if (borough) filter.borough = normalizedBorough;
 
   if (complaintType) filter.complaintType = complaintType.trim();
@@ -125,6 +129,12 @@ export const getAllComplaints = async ({
     filter.createdDate = {};
     if (parsedFrom) filter.createdDate.$gte = parsedFrom;
     if (parsedTo) filter.createdDate.$lte = parsedTo;
+  }
+
+  if (status) {
+    filter.status = status.trim();
+  } else if (!status || status === "") {
+    filter.status = "open";
   }
 
   const results = await complaintList
@@ -164,19 +174,25 @@ export const aggregateComplaintType = async () => {
     ])
     .toArray();
 
-  let combined_data = nyc311result.concat(complaintresult);
+  complaintresult.forEach((x) => {
+    for (let y of nyc311result) {
+      if (x._id === y._id) {
+        y.count = y.count + x.count;
+      }
+    }
+  });
 
-  combined_data.sort((x, y) => {
+  nyc311result.sort((x, y) => {
     return y.count - x.count;
   });
 
   let count = 1;
-  combined_data.forEach((x) => {
+  nyc311result.forEach((x) => {
     x.rank = count;
     count++;
   });
 
-  return combined_data;
+  return nyc311result;
 };
 
 export const sortDate = async (arr, bool) => {
@@ -194,13 +210,13 @@ export const sortDate = async (arr, bool) => {
 };
 
 export const findOpenOrResolved = async (arr, status) => {
-  if (status === "In Progress") {
+  if (status === "open") {
     return arr.filter((x) => {
-      return x.status === "In Progress";
+      return x.status === "open";
     });
-  } else if (status === "Closed") {
+  } else if (status === "resolved") {
     return arr.filter((x) => {
-      return x.status === "Closed";
+      return x.status === "resolved";
     });
   }
 };

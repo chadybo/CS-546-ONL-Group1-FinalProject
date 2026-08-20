@@ -7,6 +7,7 @@ import {
   escapeRegex,
   COMPLAINT_CATEGORIES,
   parseDateFilter,
+  normalizeStatus,
 } from "../helper.js";
 
 const SODA_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json";
@@ -43,7 +44,7 @@ export const refreshCache = async () => {
           borough: r.borough,
           incidentAddress: r.incident_address,
           normalizedAddress: normalizeAddress(r.incident_address),
-          status: r.status,
+          status: normalizeStatus(r.status),
           resolutionDescription: r.resolution_description || null,
           cachedAt: new Date(),
         },
@@ -63,23 +64,30 @@ export const getCached311 = async ({
   from,
   to,
   search,
+  status,
 } = {}) => {
   const col = await nyc311cache();
   const filter = {};
 
   for (const value of [borough, complaintType, from, to, search]) {
-    if (value !== undefined && typeof value !== "string") throw "Invalid filter";
+    if (value !== undefined && typeof value !== "string")
+      throw "Invalid filter";
   }
-  if (search && search.trim().length > 100) throw "Search cannot exceed 100 characters";
+  if (search && search.trim().length > 100)
+    throw "Search cannot exceed 100 characters";
 
   const normalizedBorough = borough?.trim().toUpperCase();
-  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough)) throw "Invalid borough";
+  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough))
+    throw "Invalid borough";
   if (complaintType && !COMPLAINT_CATEGORIES.includes(complaintType.trim()))
     throw "Invalid complaint type";
   const parsedFrom = from ? parseDateFilter(from, "start") : null;
   const parsedTo = to ? parseDateFilter(to, "end", true) : null;
   if (parsedFrom && parsedTo && parsedFrom > parsedTo)
     throw "The end date must be on or after the start date";
+
+  if (status && status !== "open" && status !== "resolved")
+    throw "Invalid status option";
 
   if (borough) filter.borough = normalizedBorough;
   if (search) {
@@ -99,6 +107,12 @@ export const getCached311 = async ({
     if (parsedTo) filter.createdDate.$lte = parsedTo;
   }
 
+  if (status) {
+    filter.status = status.trim();
+  } else if (!status || status === "") {
+    filter.status = "open";
+  }
+
   // const limit = 20;
   // const skip = (page - 1) * limit;
 
@@ -116,8 +130,7 @@ export const getCached311 = async ({
   if (complaintType) {
     const requestedType = complaintType.trim().toLocaleLowerCase();
     return categorizedResults.filter(
-      (record) =>
-        record.complaintType.toLocaleLowerCase() === requestedType,
+      (record) => record.complaintType.toLocaleLowerCase() === requestedType,
     );
   }
 
@@ -127,29 +140,46 @@ export const getCached311 = async ({
 // Returns complaint counts grouped by month for a given borough
 export const getComplaintTrends = async (borough) => {
   const col = await nyc311cache();
-  if (borough !== undefined && typeof borough !== "string") throw "Invalid borough";
+  if (borough !== undefined && typeof borough !== "string")
+    throw "Invalid borough";
   const normalizedBorough = borough?.trim().toUpperCase();
-  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough)) throw "Invalid borough";
+  if (normalizedBorough && !BOROUGHS.includes(normalizedBorough))
+    throw "Invalid borough";
   const match = normalizedBorough ? { borough: normalizedBorough } : {};
 
-  const trends = await col.aggregate([
-    { $match: match },
-    {
-      $group: {
-        _id: {
-          year: { $year: '$createdDate' },
-          month: { $month: '$createdDate' }
+  const trends = await col
+    .aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdDate" },
+            month: { $month: "$createdDate" },
+          },
+          count: { $sum: 1 },
         },
-        count: { $sum: 1 }
-      }
-    },
-    { $sort: { '_id.year': 1, '_id.month': 1 } }
-  ]).toArray();
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ])
+    .toArray();
 
   // Format for display
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return trends.map(t => ({
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  return trends.map((t) => ({
     label: `${monthNames[t._id.month - 1]} ${t._id.year}`,
-    count: t.count
+    count: t.count,
   }));
 };
