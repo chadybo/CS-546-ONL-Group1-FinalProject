@@ -40,10 +40,26 @@ if (form) {
       : "";
   };
 
+  const getInvalidFields = () =>
+    fields.filter((field) => field.getAttribute("aria-invalid") === "true");
+
+  // Only refresh the summary once it's already visible (i.e. after a submit
+  // attempt) so blur/input on a first pass through the form doesn't pop it
+  // up prematurely - but once shown, keep it in sync as errors clear.
+  const refreshSummaryIfVisible = () => {
+    if (summary && !summary.hidden) updateSummary(getInvalidFields());
+  };
+
   fields.forEach((field) => {
-    field.addEventListener("blur", () => validateField(field));
+    field.addEventListener("blur", () => {
+      validateField(field);
+      refreshSummaryIfVisible();
+    });
     field.addEventListener("input", () => {
-      if (field.getAttribute("aria-invalid") === "true") validateField(field);
+      if (field.getAttribute("aria-invalid") === "true") {
+        validateField(field);
+        refreshSummaryIfVisible();
+      }
     });
   });
 
