@@ -4,6 +4,7 @@ import {
   getAllComplaints,
   aggregateComplaintType,
   sortDate,
+  findOpenOrResolved,
   resolveComplaint,
   getComplaintById,
 } from "../data/complaints.js";
@@ -25,9 +26,11 @@ const MAX_PAGE = MAX_BROWSE_ITEMS / PAGE_SIZE;
 
 const parsePage = (value) => {
   if (value === undefined) return 1;
-  if (typeof value !== "string" || !/^\d+$/.test(value)) throw "Invalid page number";
+  if (typeof value !== "string" || !/^\d+$/.test(value))
+    throw "Invalid page number";
   const page = Number.parseInt(value, 10);
-  if (page < 1 || page > MAX_PAGE) throw `Page must be between 1 and ${MAX_PAGE}`;
+  if (page < 1 || page > MAX_PAGE)
+    throw `Page must be between 1 and ${MAX_PAGE}`;
   return page;
 };
 
@@ -66,10 +69,15 @@ router.post("/submit", async (req, res) => {
 
 router.route("/browse").get(async (req, res) => {
   try {
-    const { borough, complaintType, from, to, search, sort } = req.query;
+    const { borough, complaintType, from, to, search, sort, status } =
+      req.query;
     const page = parsePage(req.query.page);
-    if (sort && sort !== "Newest" && sort !== "Oldest") throw "Invalid sort option";
+    if (sort && sort !== "Newest" && sort !== "Oldest")
+      throw "Invalid sort option";
     const sortOrder = sort || "Newest";
+
+    if (status && status !== "Open" && status !== "Closed")
+      throw "Invalid status option";
 
     const filters = { borough, complaintType, from, to, search };
 
@@ -83,9 +91,18 @@ router.route("/browse").get(async (req, res) => {
     await sortDate(combinedList, sortOrder === "Newest" ? 1 : 0);
     combinedList = combinedList.slice(0, MAX_BROWSE_ITEMS);
 
+    if (status) {
+      combinedList = await findOpenOrResolved(combinedList, status);
+    } else {
+      combinedList = await findOpenOrResolved(combinedList, "Open");
+    }
+
     const totPages = Math.ceil(combinedList.length / PAGE_SIZE);
     const startIndex = (page - 1) * PAGE_SIZE;
-    const paginatedList = combinedList.slice(startIndex, startIndex + PAGE_SIZE);
+    const paginatedList = combinedList.slice(
+      startIndex,
+      startIndex + PAGE_SIZE,
+    );
 
     let queryString = [];
     if (borough) {
@@ -105,6 +122,9 @@ router.route("/browse").get(async (req, res) => {
     }
     if (sort) {
       queryString.push(`sort=${encodeURIComponent(sort)}`);
+    }
+    if (status) {
+      queryString.push(`status=${encodeURIComponent(status)}`);
     }
 
     if (queryString.length) {
@@ -135,6 +155,8 @@ router.route("/browse").get(async (req, res) => {
       isOther: complaintType === "Other",
       isNewest: sortOrder === "Newest",
       isOldest: sortOrder === "Oldest",
+      isOpen: status === "Open",
+      isClosed: status === "Closed",
       from,
       to,
       search,
@@ -142,7 +164,8 @@ router.route("/browse").get(async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: typeof e === "string" ? e : "Complaints are temporarily unavailable.",
+      message:
+        typeof e === "string" ? e : "Complaints are temporarily unavailable.",
     });
   }
 });
@@ -197,14 +220,16 @@ router.route("/hotspots").get(async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: typeof e === "string" ? e : "Hotspots are temporarily unavailable.",
+      message:
+        typeof e === "string" ? e : "Hotspots are temporarily unavailable.",
     });
   }
 });
 
 router.get("/address", async (req, res) => {
   const { q } = req.query;
-  const borough = typeof req.query.borough === "string" ? req.query.borough : "";
+  const borough =
+    typeof req.query.borough === "string" ? req.query.borough : "";
   const complaintType =
     typeof req.query.type === "string" ? req.query.type : "";
   const query = typeof q === "string" ? q : "";
@@ -257,15 +282,17 @@ router.get("/address", async (req, res) => {
     });
   } catch (e) {
     const isValidationError = typeof e === "string";
-    return res.status(isValidationError ? 400 : 500).render("complaints/address", {
-      ...addressView,
-      error: isValidationError
-        ? e
-        : "Address history is temporarily unavailable. Please try again.",
-      results: [],
-      hasSearched: false,
-      hasResults: false,
-    });
+    return res
+      .status(isValidationError ? 400 : 500)
+      .render("complaints/address", {
+        ...addressView,
+        error: isValidationError
+          ? e
+          : "Address history is temporarily unavailable. Please try again.",
+        results: [],
+        hasSearched: false,
+        hasResults: false,
+      });
   }
 });
 
@@ -311,7 +338,10 @@ router.get("/common", async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: publicError(e, "Complaint statistics are temporarily unavailable"),
+      message: publicError(
+        e,
+        "Complaint statistics are temporarily unavailable",
+      ),
     });
   }
 });

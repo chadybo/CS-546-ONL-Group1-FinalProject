@@ -27,12 +27,18 @@ export const submitComplaint = async (
     typeof borough !== "string" ||
     typeof complaintType !== "string" ||
     (description !== undefined && typeof description !== "string")
-  ) throw "Complaint fields must be valid text";
+  )
+    throw "Complaint fields must be valid text";
   if (!ObjectId.isValid(userId)) throw "Invalid user ID";
   address = sanitizePlainText(address);
   borough = borough.trim();
   description = sanitizePlainText(description || "");
-  if (address.length < 5 || address.length > 120 || !/\d/.test(address) || !/[a-z]/i.test(address))
+  if (
+    address.length < 5 ||
+    address.length > 120 ||
+    !/\d/.test(address) ||
+    !/[a-z]/i.test(address)
+  )
     throw "Enter a valid address with a street number and name";
   if (!BOROUGHS.includes(borough)) throw "Invalid borough";
   if (!COMPLAINT_CATEGORIES.includes(complaintType))
@@ -82,12 +88,17 @@ export const getAllComplaints = async ({
   const filter = {};
 
   for (const value of [borough, complaintType, from, to, search]) {
-    if (value !== undefined && typeof value !== "string") throw "Invalid filter";
+    if (value !== undefined && typeof value !== "string")
+      throw "Invalid filter";
   }
-  if (search && search.trim().length > 100) throw "Search cannot exceed 100 characters";
+  if (search && search.trim().length > 100)
+    throw "Search cannot exceed 100 characters";
 
   const normalizedBorough = borough?.trim().toUpperCase();
-  if (normalizedBorough && !BOROUGHS.some((item) => item.toUpperCase() === normalizedBorough))
+  if (
+    normalizedBorough &&
+    !BOROUGHS.some((item) => item.toUpperCase() === normalizedBorough)
+  )
     throw "Invalid borough";
   if (complaintType && !COMPLAINT_CATEGORIES.includes(complaintType.trim()))
     throw "Invalid complaint type";
@@ -98,8 +109,7 @@ export const getAllComplaints = async ({
 
   if (borough) filter.borough = normalizedBorough;
 
-  if (complaintType)
-    filter.complaintType = complaintType.trim();
+  if (complaintType) filter.complaintType = complaintType.trim();
 
   if (search) {
     const regex = { $regex: escapeRegex(search.trim()), $options: "i" };
@@ -181,6 +191,18 @@ export const sortDate = async (arr, bool) => {
   }
 
   return arr;
+};
+
+export const findOpenOrResolved = async (arr, status) => {
+  if (status === "Open") {
+    return arr.filter((x) => {
+      return x.status === "In Progress";
+    });
+  } else if (status === "Closed") {
+    return arr.filter((x) => {
+      return x.status === "Closed";
+    });
+  }
 };
 
 // Fetches a single complaint by its id, checking both user complaints and the 311 cache

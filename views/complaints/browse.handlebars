@@ -36,6 +36,13 @@
         <option value="Oldest" {{#if isOldest}}selected{{/if}}>Oldest</option>
       </select>
     </div>
+    <div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Status</label>
+      <select name="status">
+        <option value="Open" {{#if isOpen}}selected{{/if}}>Open</option>
+        <option value="Closed" {{#if isClosed}}selected{{/if}}>Closed</option>
+      </select>
+    </div>
     <div class="form-group filter-date-field">
       <label for="filter-from" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
       <input id="filter-from" type="date" name="from" value="{{from}}" data-validate data-date-start aria-describedby="filter-from-error" />
