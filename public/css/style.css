@@ -499,7 +499,7 @@ tbody tr:hover {
   padding: 10px 20px;
   border-radius: var(--radius-sm);
   border: none;
-  cursor: pointer;
+  cursor: pointer; 
   transition:
     background 0.15s,
     transform 0.1s;
@@ -709,7 +709,12 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr) auto;
   gap: 16px;
-  align-items: end;
+  align-items: start;
+}
+
+.address-search-action {
+  align-self: start;
+  padding-top: 27px;
 }
 
 .address-search-form .form-group {
