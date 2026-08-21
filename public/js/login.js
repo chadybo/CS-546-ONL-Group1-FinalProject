@@ -73,7 +73,7 @@ $(function () {
 
   $form.on("submit", function (event) {
     event.preventDefault();
-    $serverError.prop("hidden", true);
+    
 
     const $invalidFields = $fields.filter((_, el) => !validateField($(el)));
     updateSummary($invalidFields);
@@ -82,7 +82,7 @@ $(function () {
       $invalidFields.first().trigger("focus");
       return;
     }
-
+    $serverError.prop("hidden", true);
     $submitButton.prop("disabled", true);
     $submitButton.text($submitButton.data("submittingText") || "Submitting…");
 
