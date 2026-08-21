@@ -3,103 +3,112 @@ import {
   validateLoginPasswordLength,
 } from "/public/js/client-validation.js";
 
-const form = document.getElementById("login-form");
+const LOGIN_REQUEST_TIMEOUT_MS = 10000;
 
-if (form) {
-  const emailField = document.getElementById("email");
-  const passwordField = document.getElementById("password");
-  const serverError = document.getElementById("login-error");
-  const summary = form.querySelector(".form-error-summary");
-  const submitButton = form.querySelector('[type="submit"]');
+$(function () {
+  const $form = $("#login-form");
+  if (!$form.length) return;
+
+  const $email = $("#email");
+  const $password = $("#password");
+  const $serverError = $("#login-error");
+  const $summary = $form.find(".form-error-summary");
+  const $submitButton = $form.find('[type="submit"]');
+  const $fields = $email.add($password);
 
   const fieldValidators = {
-    [emailField.id]: validateEmail,
-    [passwordField.id]: validateLoginPasswordLength,
-  };
-  const fields = [emailField, passwordField];
-
-  const showFieldError = (field, message) => {
-    field.classList.toggle("is-invalid", Boolean(message));
-    field.setAttribute("aria-invalid", String(Boolean(message)));
-    const error = field.closest(".form-group")?.querySelector(".field-error");
-    if (error) error.textContent = message;
+    email: validateEmail,
+    password: validateLoginPasswordLength,
   };
 
-  const validateField = (field) => {
-    const validator = fieldValidators[field.id];
-    const message = validator ? validator(field.value) : "";
-    showFieldError(field, message);
+  const showFieldError = ($field, message) => {
+    $field.toggleClass("is-invalid", Boolean(message));
+    $field.attr("aria-invalid", Boolean(message));
+    $field.closest(".form-group").find(".field-error").text(message);
+  };
+
+  const validateField = ($field) => {
+    const validator = fieldValidators[$field.attr("id")];
+    const message = validator ? validator($field.val()) : "";
+    showFieldError($field, message);
     return !message;
   };
 
-  const updateSummary = (invalidFields) => {
-    if (!summary) return;
-    summary.hidden = invalidFields.length === 0;
-    summary.textContent = invalidFields.length
-      ? `Please correct ${invalidFields.length === 1 ? "the highlighted field" : `${invalidFields.length} highlighted fields`}.`
-      : "";
-  };
-
   const getInvalidFields = () =>
-    fields.filter((field) => field.getAttribute("aria-invalid") === "true");
+    $fields.filter((_, el) => $(el).attr("aria-invalid") === "true");
+
+  const updateSummary = ($invalidFields) => {
+    if (!$summary.length) return;
+    const count = $invalidFields.length;
+    $summary.prop("hidden", count === 0);
+    $summary.text(
+      count
+        ? `Please correct ${count === 1 ? "the highlighted field" : `${count} highlighted fields`}.`
+        : "",
+    );
+  };
 
   // Only refresh the summary once it's already visible (i.e. after a submit
   // attempt) so blur/input on a first pass through the form doesn't pop it
   // up prematurely - but once shown, keep it in sync as errors clear.
   const refreshSummaryIfVisible = () => {
-    if (summary && !summary.hidden) updateSummary(getInvalidFields());
+    if ($summary.length && !$summary.prop("hidden")) {
+      updateSummary(getInvalidFields());
+    }
   };
 
-  fields.forEach((field) => {
-    field.addEventListener("blur", () => {
-      validateField(field);
+  $fields.each(function () {
+    const $field = $(this);
+    $field.on("blur", () => {
+      validateField($field);
       refreshSummaryIfVisible();
     });
-    field.addEventListener("input", () => {
-      if (field.getAttribute("aria-invalid") === "true") {
-        validateField(field);
+    $field.on("input", () => {
+      if ($field.attr("aria-invalid") === "true") {
+        validateField($field);
         refreshSummaryIfVisible();
       }
     });
   });
 
-  form.addEventListener("submit", (event) => {
+  $form.on("submit", function (event) {
     event.preventDefault();
-    if (serverError) serverError.hidden = true;
+    $serverError.prop("hidden", true);
 
-    const invalidFields = fields.filter((field) => !validateField(field));
-    updateSummary(invalidFields);
+    const $invalidFields = $fields.filter((_, el) => !validateField($(el)));
+    updateSummary($invalidFields);
 
-    if (invalidFields.length) {
-      invalidFields[0].focus();
+    if ($invalidFields.length) {
+      $invalidFields.first().trigger("focus");
       return;
     }
 
-    submitButton.disabled = true;
-    submitButton.textContent = submitButton.dataset.submittingText || "Submitting…";
+    $submitButton.prop("disabled", true);
+    $submitButton.text($submitButton.data("submittingText") || "Submitting…");
 
     $.ajax({
       url: "/users/login",
       method: "POST",
       contentType: "application/json",
+      timeout: LOGIN_REQUEST_TIMEOUT_MS,
       data: JSON.stringify({
-        email: emailField.value,
-        password: passwordField.value,
+        email: $email.val(),
+        password: $password.val(),
       }),
       success: function () {
         window.location.href = "/users/dashboard";
       },
-      error: function (xhr) {
-        const msg = xhr.responseJSON && xhr.responseJSON.error
-          ? xhr.responseJSON.error
-          : "Login failed. Please try again.";
-        if (serverError) {
-          serverError.textContent = msg;
-          serverError.hidden = false;
-        }
-        submitButton.disabled = false;
-        submitButton.textContent = "Log in";
+      error: function (xhr, textStatus) {
+        const msg =
+          textStatus === "timeout"
+            ? "The login request timed out. Please try again."
+            : xhr.responseJSON && xhr.responseJSON.error
+              ? xhr.responseJSON.error
+              : "Login failed. Please try again.";
+        $serverError.text(msg).prop("hidden", false);
+        $submitButton.prop("disabled", false);
+        $submitButton.text("Log in");
       },
     });
   });
-}
+});
