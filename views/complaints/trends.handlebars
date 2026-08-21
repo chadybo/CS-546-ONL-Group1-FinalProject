@@ -1,16 +1,19 @@
 <h1>Complaint Trends Over Time</h1>
 
-<form method="GET" action="/complaints/trends">
-  <select name="borough">
-    <option value="">All boroughs</option>
-    <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
-    <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
-    <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
-    <option value="Bronx" {{#if isBronx}}selected{{/if}}>Bronx</option>
-    <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
-  </select>
-  <button type="submit">Filter</button>
-</form>
+<div class="filter-bar">
+  <form method="GET" action="/complaints/trends">
+    <select name="borough">
+      <option value="">All boroughs</option>
+      <option value="Manhattan" {{#if isManhattan}}selected{{/if}}>Manhattan</option>
+      <option value="Brooklyn" {{#if isBrooklyn}}selected{{/if}}>Brooklyn</option>
+      <option value="Queens" {{#if isQueens}}selected{{/if}}>Queens</option>
+      <option value="Bronx" {{#if isBronx}}selected{{/if}}>Bronx</option>
+      <option value="Staten Island" {{#if isStatenIsland}}selected{{/if}}>Staten Island</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filter</button>
+  </form>
+</div>
+
 
 {{#if trends.length}}
   <table class="history-table">
