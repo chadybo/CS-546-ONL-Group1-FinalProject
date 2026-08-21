@@ -94,27 +94,36 @@ router.route("/browse").get(async (req, res) => {
       startIndex + PAGE_SIZE,
     );
 
+    let hasFilters = false;
+
     let queryString = [];
     if (borough) {
       queryString.push(`borough=${encodeURIComponent(borough)}`);
+      hasFilters = true;
     }
     if (complaintType) {
       queryString.push(`complaintType=${encodeURIComponent(complaintType)}`);
+      hasFilters = true;
     }
     if (from) {
       queryString.push(`from=${encodeURIComponent(from)}`);
+      hasFilters = true;
     }
     if (to) {
       queryString.push(`to=${encodeURIComponent(to)}`);
+      hasFilters = true;
     }
     if (search) {
       queryString.push(`search=${encodeURIComponent(search)}`);
+      hasFilters = true;
     }
     if (sort) {
       queryString.push(`sort=${encodeURIComponent(sort)}`);
+      hasFilters = true;
     }
     if (status) {
       queryString.push(`status=${encodeURIComponent(status)}`);
+      hasFilters = true;
     }
 
     if (queryString.length) {
@@ -147,6 +156,7 @@ router.route("/browse").get(async (req, res) => {
       isOldest: sortOrder === "Oldest",
       isOpen: status === "open",
       isClosed: status === "resolved",
+      hasFilters,
       from,
       to,
       search,

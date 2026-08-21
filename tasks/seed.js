@@ -1,6 +1,10 @@
 import fetch from "node-fetch";
 import { dbConnection, closeConnection } from "../config/mongoConnection.js";
-import { deriveComplaintCategory, normalizeAddress } from "../helper.js";
+import {
+  deriveComplaintCategory,
+  normalizeAddress,
+  normalizeStatus,
+} from "../helper.js";
 import { ObjectId } from "mongodb";
 import { upsertHotspot } from "../data/hotspots.js";
 import bcrypt from "bcrypt";
@@ -62,7 +66,7 @@ const seed = async () => {
           borough: r.borough,
           incidentAddress: r.incident_address,
           normalizedAddress: normalizeAddress(r.incident_address),
-          status: r.status,
+          status: normalizeStatus(r.status),
           resolutionDescription: r.resolution_description || null,
           cachedAt: new Date(),
         },

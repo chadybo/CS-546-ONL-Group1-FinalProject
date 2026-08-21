@@ -499,7 +499,7 @@ tbody tr:hover {
   padding: 10px 20px;
   border-radius: var(--radius-sm);
   border: none;
-  cursor: pointer; 
+  cursor: pointer;
   transition:
     background 0.15s,
     transform 0.1s;
@@ -588,6 +588,13 @@ tbody tr:hover {
   top: 100%;
   left: 0;
   white-space: nowrap;
+}
+
+.clear-filters-row {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }
 
 /* ================================

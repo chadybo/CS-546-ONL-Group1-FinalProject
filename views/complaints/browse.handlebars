@@ -59,6 +59,7 @@
     </div>
     <input type="hidden" name="page" value="1" />
     <button type="submit" class="btn btn-primary">Filter</button>
+    {{#if hasFilters}}<div class="clear-filters-row"><a href="/complaints/browse" class="btn btn-primary">Clear filters</a></div>{{/if}}
   </form>
 </div>
 
@@ -122,6 +123,5 @@
 {{else}}
   <div class="empty-state">
     <p>No complaints found matching your filters.</p>
-    <a href="/complaints/browse" class="btn btn-outline">Clear filters</a>
   </div>
 {{/if}}
