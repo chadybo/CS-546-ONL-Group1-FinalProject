@@ -59,9 +59,8 @@ export const deriveComplaintCategory = (
     return canonicalDescriptor;
   }
 
-  const canonicalSourceType = getCanonicalComplaintCategory(
-    sourceComplaintType,
-  );
+  const canonicalSourceType =
+    getCanonicalComplaintCategory(sourceComplaintType);
   if (canonicalSourceType) {
     return canonicalSourceType;
   }
@@ -129,6 +128,26 @@ export const normalizeAddress = (address) => {
     .join(" ");
 };
 
+export const normalizeStatus = (status) => {
+  if (typeof status !== "string") return "";
+
+  if (
+    status.toLowerCase() === "open" ||
+    status.toLowerCase() === "in progress"
+  ) {
+    return "open";
+  }
+
+  if (
+    status.toLowerCase() === "resolved" ||
+    status.toLowerCase() === "closed"
+  ) {
+    return "resolved";
+  }
+
+  return status;
+};
+
 export const escapeRegex = (value) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -137,7 +156,10 @@ export const parseDateFilter = (value, label, endOfDay = false) => {
     throw `Invalid ${label} date`;
   }
   const date = new Date(`${value}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+  ) {
     throw `Invalid ${label} date`;
   }
   if (endOfDay) date.setUTCHours(23, 59, 59, 999);

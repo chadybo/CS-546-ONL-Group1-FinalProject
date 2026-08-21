@@ -172,7 +172,7 @@ a {
    MAIN CONTENT
 ================================ */
 .main-content {
-  max-width: 1200px;
+  max-width: 1298px;
   margin: 0 auto;
   padding: 40px 24px;
   flex: 1;
@@ -590,6 +590,13 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
+.clear-filters-row {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
 /* ================================
    ALERTS & ERRORS
 ================================ */
@@ -709,7 +716,12 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr) auto;
   gap: 16px;
-  align-items: end;
+  align-items: start;
+}
+
+.address-search-action {
+  align-self: start;
+  padding-top: 27px;
 }
 
 .address-search-form .form-group {

@@ -27,12 +27,18 @@ export const submitComplaint = async (
     typeof borough !== "string" ||
     typeof complaintType !== "string" ||
     (description !== undefined && typeof description !== "string")
-  ) throw "Complaint fields must be valid text";
+  )
+    throw "Complaint fields must be valid text";
   if (!ObjectId.isValid(userId)) throw "Invalid user ID";
   address = sanitizePlainText(address);
   borough = borough.trim();
   description = sanitizePlainText(description || "");
-  if (address.length < 5 || address.length > 120 || !/\d/.test(address) || !/[a-z]/i.test(address))
+  if (
+    address.length < 5 ||
+    address.length > 120 ||
+    !/\d/.test(address) ||
+    !/[a-z]/i.test(address)
+  )
     throw "Enter a valid address with a street number and name";
   if (!BOROUGHS.includes(borough)) throw "Invalid borough";
   if (!COMPLAINT_CATEGORIES.includes(complaintType))
@@ -51,7 +57,7 @@ export const submitComplaint = async (
     complaintType,
     complaintCategory: complaintType,
     resolutionDescription: description,
-    status: "In Progress",
+    status: "open",
     createdDate: new Date(),
   };
 
@@ -77,17 +83,23 @@ export const getAllComplaints = async ({
   from,
   to,
   search,
+  status,
 } = {}) => {
   const complaintList = await complaints();
   const filter = {};
 
-  for (const value of [borough, complaintType, from, to, search]) {
-    if (value !== undefined && typeof value !== "string") throw "Invalid filter";
+  for (const value of [borough, complaintType, from, to, search, status]) {
+    if (value !== undefined && typeof value !== "string")
+      throw "Invalid filter";
   }
-  if (search && search.trim().length > 100) throw "Search cannot exceed 100 characters";
+  if (search && search.trim().length > 100)
+    throw "Search cannot exceed 100 characters";
 
   const normalizedBorough = borough?.trim().toUpperCase();
-  if (normalizedBorough && !BOROUGHS.some((item) => item.toUpperCase() === normalizedBorough))
+  if (
+    normalizedBorough &&
+    !BOROUGHS.some((item) => item.toUpperCase() === normalizedBorough)
+  )
     throw "Invalid borough";
   if (complaintType && !COMPLAINT_CATEGORIES.includes(complaintType.trim()))
     throw "Invalid complaint type";
@@ -96,10 +108,12 @@ export const getAllComplaints = async ({
   if (parsedFrom && parsedTo && parsedFrom > parsedTo)
     throw "The end date must be on or after the start date";
 
+  if (status && status !== "open" && status !== "resolved")
+    throw "Invalid status option";
+
   if (borough) filter.borough = normalizedBorough;
 
-  if (complaintType)
-    filter.complaintType = complaintType.trim();
+  if (complaintType) filter.complaintType = complaintType.trim();
 
   if (search) {
     const regex = { $regex: escapeRegex(search.trim()), $options: "i" };
@@ -115,6 +129,12 @@ export const getAllComplaints = async ({
     filter.createdDate = {};
     if (parsedFrom) filter.createdDate.$gte = parsedFrom;
     if (parsedTo) filter.createdDate.$lte = parsedTo;
+  }
+
+  if (status) {
+    filter.status = status.trim();
+  } else if (!status || status === "") {
+    filter.status = "open";
   }
 
   const results = await complaintList
@@ -154,19 +174,38 @@ export const aggregateComplaintType = async () => {
     ])
     .toArray();
 
-  let combined_data = nyc311result.concat(complaintresult);
+  let combined_results = [];
 
-  combined_data.sort((x, y) => {
+  nyc311result.forEach((x) => {
+    combined_results.push(x);
+  });
+
+  complaintresult.forEach((x) => {
+    let bool = 0;
+    for (let y of combined_results) {
+      if (x._id === y._id) {
+        y.count = y.count + x.count;
+        bool = 1;
+        break;
+      }
+    }
+
+    if (bool === 0) {
+      combined_results.push(x);
+    }
+  });
+
+  combined_results.sort((x, y) => {
     return y.count - x.count;
   });
 
   let count = 1;
-  combined_data.forEach((x) => {
+  combined_results.forEach((x) => {
     x.rank = count;
     count++;
   });
 
-  return combined_data;
+  return combined_results;
 };
 
 export const sortDate = async (arr, bool) => {

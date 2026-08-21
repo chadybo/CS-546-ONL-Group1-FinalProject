@@ -25,9 +25,11 @@ const MAX_PAGE = MAX_BROWSE_ITEMS / PAGE_SIZE;
 
 const parsePage = (value) => {
   if (value === undefined) return 1;
-  if (typeof value !== "string" || !/^\d+$/.test(value)) throw "Invalid page number";
+  if (typeof value !== "string" || !/^\d+$/.test(value))
+    throw "Invalid page number";
   const page = Number.parseInt(value, 10);
-  if (page < 1 || page > MAX_PAGE) throw `Page must be between 1 and ${MAX_PAGE}`;
+  if (page < 1 || page > MAX_PAGE)
+    throw `Page must be between 1 and ${MAX_PAGE}`;
   return page;
 };
 
@@ -66,12 +68,14 @@ router.post("/submit", async (req, res) => {
 
 router.route("/browse").get(async (req, res) => {
   try {
-    const { borough, complaintType, from, to, search, sort } = req.query;
+    const { borough, complaintType, from, to, search, sort, status } =
+      req.query;
     const page = parsePage(req.query.page);
-    if (sort && sort !== "Newest" && sort !== "Oldest") throw "Invalid sort option";
+    if (sort && sort !== "Newest" && sort !== "Oldest")
+      throw "Invalid sort option";
     const sortOrder = sort || "Newest";
 
-    const filters = { borough, complaintType, from, to, search };
+    const filters = { borough, complaintType, from, to, search, status };
 
     const complaintList = await getAllComplaints(filters);
     const nyc311List = await getCached311(filters);
@@ -85,26 +89,41 @@ router.route("/browse").get(async (req, res) => {
 
     const totPages = Math.ceil(combinedList.length / PAGE_SIZE);
     const startIndex = (page - 1) * PAGE_SIZE;
-    const paginatedList = combinedList.slice(startIndex, startIndex + PAGE_SIZE);
+    const paginatedList = combinedList.slice(
+      startIndex,
+      startIndex + PAGE_SIZE,
+    );
+
+    let hasFilters = false;
 
     let queryString = [];
     if (borough) {
       queryString.push(`borough=${encodeURIComponent(borough)}`);
+      hasFilters = true;
     }
     if (complaintType) {
       queryString.push(`complaintType=${encodeURIComponent(complaintType)}`);
+      hasFilters = true;
     }
     if (from) {
       queryString.push(`from=${encodeURIComponent(from)}`);
+      hasFilters = true;
     }
     if (to) {
       queryString.push(`to=${encodeURIComponent(to)}`);
+      hasFilters = true;
     }
     if (search) {
       queryString.push(`search=${encodeURIComponent(search)}`);
+      hasFilters = true;
     }
     if (sort) {
       queryString.push(`sort=${encodeURIComponent(sort)}`);
+      hasFilters = true;
+    }
+    if (status) {
+      queryString.push(`status=${encodeURIComponent(status)}`);
+      hasFilters = true;
     }
 
     if (queryString.length) {
@@ -135,6 +154,9 @@ router.route("/browse").get(async (req, res) => {
       isOther: complaintType === "Other",
       isNewest: sortOrder === "Newest",
       isOldest: sortOrder === "Oldest",
+      isOpen: status === "open",
+      isClosed: status === "resolved",
+      hasFilters,
       from,
       to,
       search,
@@ -142,7 +164,8 @@ router.route("/browse").get(async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: typeof e === "string" ? e : "Complaints are temporarily unavailable.",
+      message:
+        typeof e === "string" ? e : "Complaints are temporarily unavailable.",
     });
   }
 });
@@ -197,14 +220,16 @@ router.route("/hotspots").get(async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: typeof e === "string" ? e : "Hotspots are temporarily unavailable.",
+      message:
+        typeof e === "string" ? e : "Hotspots are temporarily unavailable.",
     });
   }
 });
 
 router.get("/address", async (req, res) => {
   const { q } = req.query;
-  const borough = typeof req.query.borough === "string" ? req.query.borough : "";
+  const borough =
+    typeof req.query.borough === "string" ? req.query.borough : "";
   const complaintType =
     typeof req.query.type === "string" ? req.query.type : "";
   const query = typeof q === "string" ? q : "";
@@ -257,15 +282,17 @@ router.get("/address", async (req, res) => {
     });
   } catch (e) {
     const isValidationError = typeof e === "string";
-    return res.status(isValidationError ? 400 : 500).render("complaints/address", {
-      ...addressView,
-      error: isValidationError
-        ? e
-        : "Address history is temporarily unavailable. Please try again.",
-      results: [],
-      hasSearched: false,
-      hasResults: false,
-    });
+    return res
+      .status(isValidationError ? 400 : 500)
+      .render("complaints/address", {
+        ...addressView,
+        error: isValidationError
+          ? e
+          : "Address history is temporarily unavailable. Please try again.",
+        results: [],
+        hasSearched: false,
+        hasResults: false,
+      });
   }
 });
 
@@ -311,7 +338,10 @@ router.get("/common", async (req, res) => {
     });
   } catch (e) {
     return res.status(typeof e === "string" ? 400 : 500).render("error", {
-      message: publicError(e, "Complaint statistics are temporarily unavailable"),
+      message: publicError(
+        e,
+        "Complaint statistics are temporarily unavailable",
+      ),
     });
   }
 });

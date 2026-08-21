@@ -36,6 +36,13 @@
         <option value="Oldest" {{#if isOldest}}selected{{/if}}>Oldest</option>
       </select>
     </div>
+    <div>
+      <label for="filter-status" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">Status</label>
+      <select id="filter-status" name="status">
+        <option value="open" {{#if isOpen}}selected{{/if}}>Open</option>
+        <option value="resolved" {{#if isClosed}}selected{{/if}}>Resolved</option>
+      </select>
+    </div>
     <div class="form-group filter-date-field">
       <label for="filter-from" style="display:block;font-size:12px;font-weight:600;color:#495057;margin-bottom:4px">From</label>
       <input id="filter-from" type="date" name="from" value="{{from}}" data-validate data-date-start aria-describedby="filter-from-error" />
@@ -52,6 +59,7 @@
     </div>
     <input type="hidden" name="page" value="1" />
     <button type="submit" class="btn btn-primary">Filter</button>
+    {{#if hasFilters}}<div class="clear-filters-row"><a href="/complaints/browse" class="btn btn-primary">Clear filters</a></div>{{/if}}
   </form>
 </div>
 
@@ -115,6 +123,5 @@
 {{else}}
   <div class="empty-state">
     <p>No complaints found matching your filters.</p>
-    <a href="/complaints/browse" class="btn btn-outline">Clear filters</a>
   </div>
 {{/if}}

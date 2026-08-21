@@ -34,8 +34,15 @@
           </div>
           {{#if user}}
             <a href="/users/dashboard" class="nav-link">Dashboard</a>
+            {{#if (eq user.role "admin")}}<a
+                href="/admin"
+                class="nav-link"
+              >Admin</a>{{/if}}
             <form method="POST" action="/users/logout" class="nav-logout-form">
-              <button type="submit" class="nav-link nav-link-button">Logout</button>
+              <button
+                type="submit"
+                class="nav-link nav-link-button"
+              >Logout</button>
             </form>
           {{else}}
             <a href="/users/login" class="nav-link">Login</a>
@@ -44,8 +51,12 @@
         </div>
       </div>
     </nav>
-{{#if successMessage}}<div class="alert alert-success">{{successMessage}}</div>{{/if}}
-{{#if errorMessage}}<div class="alert alert-error">{{errorMessage}}</div>{{/if}}
+    {{#if successMessage}}<div
+        class="alert alert-success"
+      >{{successMessage}}</div>{{/if}}
+    {{#if errorMessage}}<div
+        class="alert alert-error"
+      >{{errorMessage}}</div>{{/if}}
     <main class="main-content">
       {{{body}}}
     </main>
