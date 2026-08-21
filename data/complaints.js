@@ -174,25 +174,38 @@ export const aggregateComplaintType = async () => {
     ])
     .toArray();
 
+  let combined_results = [];
+
+  nyc311result.forEach((x) => {
+    combined_results.push(x);
+  });
+
   complaintresult.forEach((x) => {
-    for (let y of nyc311result) {
+    let bool = 0;
+    for (let y of combined_results) {
       if (x._id === y._id) {
         y.count = y.count + x.count;
+        bool = 1;
+        break;
       }
+    }
+
+    if (bool === 0) {
+      combined_results.push(x);
     }
   });
 
-  nyc311result.sort((x, y) => {
+  combined_results.sort((x, y) => {
     return y.count - x.count;
   });
 
   let count = 1;
-  nyc311result.forEach((x) => {
+  combined_results.forEach((x) => {
     x.rank = count;
     count++;
   });
 
-  return nyc311result;
+  return combined_results;
 };
 
 export const sortDate = async (arr, bool) => {

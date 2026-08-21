@@ -129,6 +129,8 @@ export const normalizeAddress = (address) => {
 };
 
 export const normalizeStatus = (status) => {
+  if (typeof status !== "string") return "";
+
   if (
     status.toLowerCase() === "open" ||
     status.toLowerCase() === "in progress"

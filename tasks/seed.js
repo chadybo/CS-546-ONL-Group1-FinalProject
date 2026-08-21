@@ -104,7 +104,7 @@ const seed = async () => {
     },
   ];
 
-  await db.collection("users").drop();
+  await db.collection("users").deleteMany({});
   const user_result = await db.collection("users").insertMany(seed_users);
 
   console.log(`Seeded ${user_result.insertedCount} new user records`);
@@ -114,7 +114,7 @@ const seed = async () => {
     .collection("users")
     .findOne({ username: "reguser2" });
 
-  await db.collection("complaints").drop();
+  await db.collection("complaints").deleteMany({});
   const seed_complaints = [
     {
       _id: new ObjectId(),
@@ -183,8 +183,8 @@ const seed = async () => {
       incidentAddress: normalizeAddress("636 Greenwich St"),
       normalizedAddress: normalizeAddress("636 Greenwich St"),
       borough: "QUEENS",
-      complaintType: "Dog Barking",
-      complaintCategory: "Dog Barking",
+      complaintType: "Barking Dog",
+      complaintCategory: "Barking Dog",
       resolutionDescription:
         "Someone has an terribly loud dog at the Greenwich Hotel.",
       status: "open",
@@ -242,7 +242,7 @@ const seed = async () => {
     },
   );
 
-  await db.collection("hotspots").drop();
+  await db.collection("hotspots").deleteMany({});
 
   const normal_add1 = normalizeAddress("209 joralemon st");
   const normal_add2 = normalizeAddress("636 Greenwich St");
