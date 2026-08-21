@@ -18,9 +18,13 @@ if (mapElement && globalThis.maptilersdk) {
 
   map.on("load", () => {
     coordinates
-      .filter((point) => Number.isFinite(point?.lng) && Number.isFinite(point?.lat))
+      .filter(
+        (point) => Number.isFinite(point?.lng) && Number.isFinite(point?.lat),
+      )
       .forEach((point) => {
-        new maptilersdk.Marker().setLngLat([point.lng, point.lat]).addTo(map);
+        new maptilersdk.Marker({ color: "red" })
+          .setLngLat([point.lng, point.lat])
+          .addTo(map);
       });
   });
 }
